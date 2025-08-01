@@ -1,0 +1,71 @@
+[
+  {
+    "id": "sushi002",
+    "name": "Ton Balığı Sushi",
+    "category": "sushi",
+    "description": "Premium ton balığı ile hazırlanmış sushi",
+    "price": 50,
+    "image": null,
+    "tags": [
+      "premium"
+    ]
+  },
+  {
+    "id": "maki001",
+    "name": "California Roll",
+    "category": "rolls",
+    "description": "Avokado, salatalık ve surimi ile hazırlanmış klasik maki",
+    "price": 35,
+    "image": null,
+    "tags": [
+      "vegetarian"
+    ]
+  },
+  {
+    "id": "maki002",
+    "name": "Spicy Tuna Roll",
+    "category": "rolls",
+    "description": "Acılı ton balığı ile hazırlanmış maki",
+    "price": 40,
+    "image": null,
+    "tags": [
+      "spicy"
+    ]
+  },
+  {
+    "id": "sashimi001",
+    "name": "Somon Sashimi",
+    "category": "sashimi",
+    "description": "6 dilim taze somon sashimi",
+    "price": 55,
+    "image": null,
+    "tags": [
+      "fresh",
+      "premium"
+    ]
+  },
+  {
+    "id": "appetizer001",
+    "name": "Edamame",
+    "category": "appetizers",
+    "description": "Tuzlu soya fasulyesi",
+    "price": 20,
+    "image": null,
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ]
+  },
+  {
+    "id": "beverage001",
+    "name": "Yeşil Çay",
+    "category": "beverages",
+    "description": "Geleneksel Japon yeşil çayı",
+    "price": 15,
+    "image": null,
+    "tags": [
+      "hot",
+      "traditional"
+    ]
+  }
+]

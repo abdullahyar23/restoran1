@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijital Menü</title>
+    <style>
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #2c3e50;
+            --accent-color: #f39c12;
+            --bg-color: #f8f8f8;
+            --font-family: 'Arial', sans-serif;
+            --border-radius: 15px;
+            /* Advanced Design Variables */
+            --title-font-size: 24px;
+            --text-font-size: 16px;
+            --price-font-size: 18px;
+            --line-height: 1.6;
+            --letter-spacing: 0px;
+            --container-padding: 20px;
+            --item-margin: 15px;
+            --section-spacing: 40px;
+            --border-width: 1px;
+            --shadow-blur: 10px;
+            --shadow-offset: 2px;
+            --shadow-opacity: 0.1;
+            --hover-scale: 1.02;
+            --transition-speed: 300ms;
+            --max-width: 1200px;
+            --grid-columns: 1;
+            --grid-gap: 20px;
+            --text-align: left;
+            --title-weight: 600;
+            --text-transform: none;
+            --text-opacity: 1;
+            --bg-opacity: 1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: var(--max-width, 800px);
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .content {
+            background: rgba(var(--bg-color), var(--bg-opacity, 1));
+            min-height: 100vh;
+            padding: var(--container-padding, 20px);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color), #34495e);
+            color: white;
+            padding: 15px 20px; /* reduced from 20px */
+            text-align: center;
+            position: relative;
+            z-index: 102;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: padding 0.4s ease, box-shadow 0.4s ease;
+            will-change: padding, box-shadow;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-icon:hover {
+            background: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Header + Nav Container */
+        .header-nav-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: transparent;
+        }
+
+        .header.scrolled {
+            padding: 10px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .header.scrolled .logo {
+            width: 35px;
+            height: 35px; /* reduced from 40px */
+            margin-bottom: 5px;
+        }
+
+        .header.scrolled .restaurant-name {
+            font-size: 18px;
+            margin-bottom: 0;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px; /* reduced from 60px */
+            background: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            overflow: hidden;
+            transition: width 0.4s ease, height 0.4s ease, margin-bottom 0.4s ease;
+            will-change: width, height, margin-bottom;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .restaurant-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+            transition: font-size 0.4s ease, margin-bottom 0.4s ease;
+            will-change: font-size, margin-bottom;
+        }
+
+        .language-selector {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            min-width: 30px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .restaurant-name {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            background: #34495e;
+            padding: 8px 0; /* reduced from 12px */
+            overflow-x: auto;
+            white-space: nowrap;
+            position: relative;
+            z-index: 99;
+            margin-top: 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .header.scrolled + .nav-menu {
+            background: rgba(52, 73, 94, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 6px 0; /* added to shrink navbar on scroll */
+        }
+
+        .nav-menu::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            display: inline-block;
+            padding: 12px 18px;
+            margin: 0 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            text-decoration: none;
+            color: white;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            text-align: center;
+            touch-action: manipulation;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Menu Section */
+        .menu-section {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: var(--title-font-size, 24px);
+            font-weight: var(--title-weight, bold);
+            color: var(--secondary-color, #2c3e50);
+            text-align: var(--text-align, center);
+            text-transform: var(--text-transform, none);
+            letter-spacing: var(--letter-spacing, 0px);
+            line-height: var(--line-height, 1.6);
+            margin-bottom: var(--item-margin, 20px);
+            padding-bottom: 10px;
+            border-bottom: var(--border-width, 3px) solid var(--primary-color, #e74c3c);
+            position: relative;
+            opacity: var(--text-opacity, 1);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: calc(-1 * var(--border-width, 3px));
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: var(--border-width, 3px);
+            background: var(--accent-color, #f39c12);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-columns, 1), 1fr);
+            gap: var(--grid-gap, 20px);
+            margin-bottom: var(--section-spacing, 30px);
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, var(--bg-opacity, 1));
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-offset, 2px) calc(var(--shadow-offset, 2px) * 2) var(--shadow-blur, 15px) rgba(0,0,0,var(--shadow-opacity, 0.1));
+            overflow: hidden;
+            transition: all var(--transition-speed, 0.3s) ease;
+            border: var(--border-width, 1px) solid #ecf0f1;
+            margin-bottom: var(--item-margin, 15px);
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px) scale(var(--hover-scale, 1.02));
+            box-shadow: var(--shadow-offset, 2px) calc(var(--shadow-offset, 2px) * 4) calc(var(--shadow-blur, 15px) + 10px) rgba(0,0,0,calc(var(--shadow-opacity, 0.1) + 0.05));
+        }
+
+        .item-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #f1c40f, #e67e22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .item-content {
+            padding: var(--container-padding, 15px);
+        }
+
+        .item-name {
+            font-size: var(--title-font-size, 18px);
+            font-weight: var(--title-weight, bold);
+            color: var(--secondary-color);
+            text-transform: var(--text-transform, none);
+            letter-spacing: var(--letter-spacing, 0px);
+            line-height: var(--line-height, 1.6);
+            text-align: var(--text-align, left);
+            margin-bottom: 8px;
+            opacity: var(--text-opacity, 1);
+        }
+
+        .item-description {
+            font-size: var(--text-font-size, 14px);
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            line-height: var(--line-height, 1.4);
+            text-align: var(--text-align, left);
+            opacity: var(--text-opacity, 1);
+        }
+
+        .menu-item-description {
+            font-size: var(--text-font-size, 14px);
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            line-height: var(--line-height, 1.4);
+            text-align: var(--text-align, left);
+            opacity: var(--text-opacity, 1);
+        }
+
+        .item-tags {
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-right: 5px;
+        }
+
+        .tag.vegetarian {
+            background: #27ae60;
+        }
+
+        .tag.spicy {
+            background: #e67e22;
+        }
+
+        .tag.tempura {
+            background: var(--accent-color);
+        }
+
+        .item-price {
+            font-size: var(--price-font-size, 20px);
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: var(--text-align, right);
+            opacity: var(--text-opacity, 1);
+        }
+
+        .price {
+            font-size: var(--price-font-size, 20px);
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: var(--text-align, right);
+            opacity: var(--text-opacity, 1);
+        }
+
+        .price-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        .add-to-cart-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .add-to-cart-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .add-to-cart-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .item-image {
+                height: 180px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .item-image {
+                height: 160px;
+            }
+        }
+
+        /* Cart Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Table Selection Styles */
+        .table-selection {
+            padding: 20px;
+            border-bottom: 2px solid #ecf0f1;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .table-selection h3 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .table-selection p {
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .table-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .selected-table-info {
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), #c0392b);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .table-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-info-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .table-info-header .btn-cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .table-info-header .btn-cancel:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .person-section {
+            padding: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .person-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .person-selector select {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .add-person-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-person-form input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .person-cart {
+            padding: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .person-cart h3 {
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .cart-items {
+            margin-bottom: 15px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: white;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .cart-item-price {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .quantity-display {
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .person-total {
+            text-align: right;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: var(--secondary-color);
+        }
+
+        .table-summary {
+            padding: 20px;
+        }
+
+        .table-summary h3 {
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .table-items {
+            margin-bottom: 15px;
+        }
+
+        .table-person-group {
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .table-person-name {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .table-person-items {
+            margin-left: 15px;
+        }
+
+        .table-person-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .table-person-item:last-child {
+            border-bottom: none;
+        }
+
+        .table-person-total {
+            text-align: right;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .table-total {
+            text-align: center;
+            padding: 20px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 24px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-success, .btn-cancel {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .empty-cart {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .modal-content {
+                margin: 5% auto;
+                width: 98%;
+            }
+            
+            .person-selector {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .add-person-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .modal-footer {
+                flex-direction: column;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--secondary-color);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .contact-info {
+            margin-bottom: 20px;
+        }
+
+        .contact-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .phone-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .address {
+            margin: 10px 0;
+            color: #bdc3c7;
+        }
+
+        .social-links {
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            color: #3498db;
+            margin: 0 10px;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        .copyright {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #34495e;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        /* Order section */
+        .order-section {
+            background: var(--primary-color);
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .order-btn {
+            background: white;
+            color: var(--primary-color);
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .order-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header + Navigation Container -->
+        <div class="header-nav-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="language-selector">TR</div>
+                <div class="header-center">
+                    <div class="logo">K</div>
+                    <div class="restaurant-name">KOKOYAKİ SUSHİ</div>
+                </div>
+                <div class="cart-icon" onclick="openCartModal()">
+                    🛒
+                    <span class="cart-count" id="cartCount">0</span>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <div class="nav-menu" id="nav-menu">
+                <!-- Navigation items will be dynamically generated -->
+            </div>
+        </div>
+
+        <!-- Dynamic Menu Sections -->
+        <div class="content">
+            <div id="menu-sections-container" style="padding: 20px;">
+                <!-- Menu sections will be dynamically generated -->
+            </div>
+        </div>
+
+        <!-- Cart Modal -->
+        <div id="cartModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🛒 Masa Siparişi</h2>
+                    <span class="close" onclick="closeCartModal()">&times;</span>
+                </div>
+                
+                <!-- Table Selection (shows if no table selected) -->
+                <div id="tableSelection" class="table-selection">
+                    <h3>🏠 Masa Seçimi</h3>
+                    <p>Sipariş verebilmek için önce masa numaranızı seçin:</p>
+                    <div class="table-selector">
+                        <select id="tableSelect" onchange="selectTable()">
+                            <option value="">Masa numaranızı seçin</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Selected Table Info -->
+                <div id="selectedTableInfo" class="selected-table-info" style="display: none;">
+                    <div class="table-info-header">
+                        <h3 id="selectedTableTitle">Masa 1</h3>
+                        <button class="btn-cancel" onclick="changeTable()">Masa Değiştir</button>
+                    </div>
+                </div>
+                
+                <!-- Person Selection/Creation -->
+                <div id="personSection" class="person-section" style="display: none;">
+                    <div class="person-selector">
+                        <select id="currentPersonSelect" onchange="switchPerson()">
+                            <option value="">Kişi seçin veya yeni ekleyin</option>
+                        </select>
+                        <button class="btn-primary" onclick="showAddPersonForm()">+ Yeni Kişi Ekle</button>
+                    </div>
+                    
+                    <div id="addPersonForm" class="add-person-form" style="display: none;">
+                        <input type="text" id="newPersonName" placeholder="İsim girin" maxlength="20" onkeypress="if(event.key==='Enter') addNewPerson()">
+                        <button class="btn-success" onclick="addNewPerson()">Ekle</button>
+                        <button class="btn-cancel" onclick="hideAddPersonForm()">İptal</button>
+                    </div>
+                </div>
+
+                <!-- Current Person's Cart -->
+                <div id="currentPersonCart" class="person-cart" style="display: none;">
+                    <h3 id="currentPersonTitle">Kişi Seçin</h3>
+                    <div id="currentPersonItems" class="cart-items">
+                        <p class="empty-cart">Henüz sipariş verilmemiş</p>
+                    </div>
+                    <div class="person-total">
+                        <strong>Kişi Toplamı: <span id="currentPersonTotal">0</span> ₺</strong>
+                    </div>
+                </div>
+
+                <!-- Table Summary -->
+                <div id="tableSummary" class="table-summary" style="display: none;">
+                    <h3>📋 Masa Özeti</h3>
+                    <div id="tableSummaryItems" class="table-items">
+                        <!-- Table summary will be generated here -->
+                    </div>
+                    <div class="table-total">
+                        <h2>Masa Toplamı: <span id="tableTotal">0</span> ₺</h2>
+                    </div>
+                </div>
+
+                <div id="modalFooter" class="modal-footer" style="display: none;">
+                    <button class="btn-primary" onclick="clearTable()">Masayı Temizle</button>
+                    <button class="btn-success" onclick="finalizeOrder()">Siparişi Tamamla</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <!-- Order Section -->
+            <div class="order-section">
+                <button class="order-btn">📞 SİPARİŞ VER</button>
+            </div>
+            
+            <div class="contact-info">
+                <h3>KOKOYAKİ SUSHİ</h3>
+                <div class="address">
+                    Güzeloba Mahallesi Lara Caddesi Yavuz Apt. No: 389/E<br>
+                    Muratpaşa Antalya
+                </div>
+                <a href="tel:05385995040" class="phone-number">0538 599 50 40</a>
+            </div>
+            
+            <div class="social-links">
+                <a href="#">📷</a>
+                <a href="#">📘</a>
+                <a href="#">🌐</a>
+            </div>
+            
+            <div class="copyright">
+                2025 © Bu sayfa Dijital Menü Platformu ile oluşturulmuştur.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data variables
+        let menuItems = [];
+        let categories = {};
+        let categoryOrder = [];
+        let restaurantSettings = {};
+        let themeSettings = {};
+
+        // Load data from JSON files
+        async function loadDataFromFiles() {
+            try {
+                console.log('📡 Loading data...');
+                
+                // Try to load from localStorage first (admin panel updates)
+                const localMenuItems = localStorage.getItem('menuItems');
+                const localCategories = localStorage.getItem('categories');
+                const localCategoryOrder = localStorage.getItem('categoryOrder');
+                const localRestaurantSettings = localStorage.getItem('restaurantSettings');
+                const localThemeSettings = localStorage.getItem('themeSettings');
+
+                // If we have localStorage data, use it
+                if (localMenuItems) {
+                    menuItems = JSON.parse(localMenuItems);
+                    categories = JSON.parse(localCategories) || {};
+                    categoryOrder = JSON.parse(localCategoryOrder) || Object.keys(categories);
+                    restaurantSettings = JSON.parse(localRestaurantSettings) || {};
+                    themeSettings = JSON.parse(localThemeSettings) || {};
+                    console.log('📊 Loaded data from localStorage (admin panel updates)');
+                    return;
+                }
+
+                // Try to load from session storage (backup)
+                const sessionData = {
+                    menuItems: sessionStorage.getItem('menuItems.json'),
+                    categories: sessionStorage.getItem('categories.json'),
+                    categoryOrder: sessionStorage.getItem('categoryOrder.json'),
+                    restaurantSettings: sessionStorage.getItem('restaurantSettings.json'),
+                    themeSettings: sessionStorage.getItem('themeSettings.json')
+                };
+
+                // If we have session data, use it
+                if (sessionData.menuItems) {
+                    menuItems = JSON.parse(sessionData.menuItems);
+                    categories = JSON.parse(sessionData.categories);
+                    categoryOrder = JSON.parse(sessionData.categoryOrder);
+                    restaurantSettings = JSON.parse(sessionData.restaurantSettings);
+                    themeSettings = JSON.parse(sessionData.themeSettings);
+                    console.log('📊 Loaded data from session storage');
+                    return;
+                }
+
+                // Otherwise, try to load from files
+                const cacheBuster = `?v=${new Date().getTime()}`;
+                const responses = await Promise.all([
+                    fetch('data/menuItems.json' + cacheBuster).catch(() => ({ ok: false })),
+                    fetch('data/categories.json' + cacheBuster).catch(() => ({ ok: false })),
+                    fetch('data/categoryOrder.json' + cacheBuster).catch(() => ({ ok: false })),
+                    fetch('data/restaurantSettings.json' + cacheBuster).catch(() => ({ ok: false })),
+                    fetch('data/themeSettings.json' + cacheBuster).catch(() => ({ ok: false }))
+                ]);
+
+                console.log('📡 Server responses:', responses.map(r => r.status));
+
+                // Load menu items
+                if (responses[0].ok) {
+                    menuItems = await responses[0].json();
+                } else {
+                    console.warn('menuItems.json not found, using default data');
+                    menuItems = [];
+                }
+
+                // Load categories
+                if (responses[1].ok) {
+                    categories = await responses[1].json();
+                } else {
+                    console.warn('categories.json not found, using default data');
+                    categories = {
+                        'sushi': 'Sushi',
+                        'sashimi': 'Sashimi',
+                        'rolls': 'Makiler',
+                        'appetizers': 'Başlangıçlar',
+                        'beverages': 'İçecekler'
+                    };
+                }
+
+                // Load category order
+                if (responses[2].ok) {
+                    categoryOrder = await responses[2].json();
+                } else {
+                    console.warn('categoryOrder.json not found, using default data');
+                    categoryOrder = Object.keys(categories);
+                }
+
+                // Load restaurant settings
+                if (responses[3].ok) {
+                    restaurantSettings = await responses[3].json();
+                } else {
+                    console.warn('restaurantSettings.json not found, using default data');
+                    restaurantSettings = {
+                        name: 'KOKOYAKİ SUSHİ',
+                        phone: '0538 599 50 40',
+                        address: 'Güzeloba Mahallesi Lara Caddesi Yavuz Apt. No: 389/E<br>Muratpaşa Antalya',
+                        instagram: '',
+                        facebook: '',
+                        website: ''
+                    };
+                }
+
+                // Load theme settings
+                if (responses[4].ok) {
+                    themeSettings = await responses[4].json();
+                } else {
+                    console.warn('themeSettings.json not found, using default data');
+                    themeSettings = {
+                        primaryColor: '#e74c3c',
+                        secondaryColor: '#2c3e50',
+                        accentColor: '#f39c12',
+                        backgroundColor: '#f8f8f8',
+                        fontFamily: "'Arial', sans-serif",
+                        borderRadius: '15px',
+                        showPrices: true,
+                        showDescriptions: true,
+                        logo: null
+                    };
+                }
+
+                // Save loaded data to localStorage for future use
+                localStorage.setItem('menuItems', JSON.stringify(menuItems));
+                localStorage.setItem('categories', JSON.stringify(categories));
+                localStorage.setItem('categoryOrder', JSON.stringify(categoryOrder));
+                localStorage.setItem('restaurantSettings', JSON.stringify(restaurantSettings));
+                localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
+
+                console.log('📊 Loaded data:', {
+                    menuItems: menuItems.length + ' items',
+                    categories: Object.keys(categories).length + ' categories',
+                    categoryOrder: categoryOrder.length + ' ordered'
+                });
+
+            } catch (error) {
+                console.warn('❌ Error loading data:', error);
+                // Fallback to default data
+                menuItems = [];
+                categories = {
+                    'sushi': 'Sushi',
+                    'sashimi': 'Sashimi', 
+                    'rolls': 'Makiler',
+                    'appetizers': 'Başlangıçlar',
+                    'beverages': 'İçecekler'
+                };
+                categoryOrder = Object.keys(categories);
+                restaurantSettings = {
+                    name: 'KOKOYAKİ SUSHİ',
+                    phone: '0538 599 50 40',
+                    address: 'Güzeloba Mahallesi Lara Caddesi Yavuz Apt. No: 389/E<br>Muratpaşa Antalya',
+                    instagram: '',
+                    facebook: '',
+                    website: ''
+                };
+                themeSettings = {
+                    primaryColor: '#e74c3c',
+                    secondaryColor: '#2c3e50',
+                    accentColor: '#f39c12',
+                    backgroundColor: '#f8f8f8',
+                    fontFamily: "'Arial', sans-serif",
+                    borderRadius: '15px',
+                    showPrices: true,
+                    showDescriptions: true,
+                    logo: null
+                };
+            }
+        }
+
+        // Apply theme settings
+        function loadThemeSettings() {
+            const defaultTheme = {
+                primaryColor: '#e74c3c',
+                secondaryColor: '#2c3e50',
+                accentColor: '#f39c12',
+                backgroundColor: '#f8f8f8',
+                fontFamily: "'Arial', sans-serif",
+                borderRadius: '15px',
+                showPrices: true,
+                showDescriptions: true,
+                logo: null
+            };
+            const finalTheme = { ...defaultTheme, ...themeSettings };
+
+            const root = document.documentElement;
+            root.style.setProperty('--primary-color', finalTheme.primaryColor);
+            root.style.setProperty('--secondary-color', finalTheme.secondaryColor);
+            root.style.setProperty('--accent-color', finalTheme.accentColor);
+            root.style.setProperty('--bg-color', finalTheme.backgroundColor);
+            root.style.setProperty('--font-family', finalTheme.fontFamily);
+            root.style.setProperty('--border-radius', finalTheme.borderRadius);
+
+            if (finalTheme.logo) {
+                const logoElement = document.querySelector('.logo');
+                logoElement.innerHTML = `<img src="${finalTheme.logo}" alt="Logo">`;
+            }
+
+            const style = document.createElement('style');
+            let cssRules = '';
+            if (!finalTheme.showPrices) {
+                cssRules += '.price { display: none !important; }';
+            }
+            if (!finalTheme.showDescriptions) {
+                cssRules += '.menu-item-description { display: none !important; }';
+            }
+            style.textContent = cssRules;
+            document.head.appendChild(style);
+        }
+
+        // Generate navigation menu dynamically
+        function generateNavigationMenu() {
+            const navMenu = document.getElementById('nav-menu');
+            navMenu.innerHTML = '';
+            categoryOrder.forEach(categoryId => {
+                if (categories[categoryId]) {
+                    const categoryName = categories[categoryId];
+                    const navItem = document.createElement('a');
+                    navItem.href = `#${categoryId}`;
+                    navItem.className = 'nav-item';
+                    navItem.textContent = categoryName.toUpperCase();
+                    navMenu.appendChild(navItem);
+                }
+            });
+        }
+
+        // Generate menu sections dynamically
+        function generateMenuSections() {
+            const container = document.getElementById('menu-sections-container');
+            container.innerHTML = '';
+            categoryOrder.forEach(categoryId => {
+                if (categories[categoryId]) {
+                    const categoryName = categories[categoryId];
+                    const categoryItems = menuItems.filter(item => item.category === categoryId);
+                    const section = createCategorySection(categoryId, categoryName, categoryItems);
+                    container.appendChild(section);
+                }
+            });
+        }
+
+        // Create a category section
+        function createCategorySection(categoryId, categoryName, items) {
+            const section = document.createElement('div');
+            section.className = 'menu-section';
+            section.id = categoryId;
+
+            const title = document.createElement('h2');
+            title.className = 'section-title';
+            title.textContent = categoryName.toUpperCase();
+            section.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = 'menu-grid';
+
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    const menuItem = createMenuItemHTML(item);
+                    grid.appendChild(menuItem);
+                });
+            } else {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-category';
+                emptyMessage.innerHTML = '<p>Bu kategoride henüz ürün bulunmuyor.</p>';
+                emptyMessage.style.cssText = `
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #666;
+                    font-style: italic;
+                    grid-column: 1 / -1;
+                `;
+                grid.appendChild(emptyMessage);
+            }
+
+            section.appendChild(grid);
+
+            return section;
+        }
+
+        // Create menu item HTML
+        function createMenuItemHTML(item) {
+            const menuItem = document.createElement('div');
+            menuItem.className = 'menu-item';
+
+            const itemImage = document.createElement('div');
+            itemImage.className = 'item-image';
+            if (item.image) {
+                itemImage.style.backgroundImage = `url(${item.image})`;
+                itemImage.innerHTML = '';
+            } else {
+                itemImage.innerHTML = '📷';
+            }
+
+            const itemContent = document.createElement('div');
+            itemContent.className = 'item-content';
+
+            const itemName = document.createElement('h3');
+            itemName.className = 'item-name';
+            itemName.textContent = item.name;
+            itemContent.appendChild(itemName);
+
+            if (item.tags && item.tags.length > 0) {
+                const tagsDiv = document.createElement('div');
+                tagsDiv.className = 'item-tags';
+                item.tags.forEach(tag => {
+                    const tagSpan = document.createElement('span');
+                    tagSpan.className = `tag ${getTagClass(tag)}`;
+                    tagSpan.textContent = getTagText(tag);
+                    tagsDiv.appendChild(tagSpan);
+                });
+                itemContent.appendChild(tagsDiv);
+            }
+
+            if (item.description) {
+                const itemDescription = document.createElement('p');
+                itemDescription.className = 'item-description menu-item-description';
+                itemDescription.textContent = item.description;
+                itemContent.appendChild(itemDescription);
+            }
+
+            const priceContainer = document.createElement('div');
+            priceContainer.className = 'price-container';
+            
+            const itemPrice = document.createElement('div');
+            itemPrice.className = 'item-price price';
+            itemPrice.textContent = `${item.price} ₺`;
+            
+            const addToCartBtn = document.createElement('button');
+            addToCartBtn.className = 'add-to-cart-btn';
+            addToCartBtn.innerHTML = '🛒 Sepete Ekle';
+            addToCartBtn.onclick = () => addToCart(item);
+            
+            priceContainer.appendChild(itemPrice);
+            priceContainer.appendChild(addToCartBtn);
+            itemContent.appendChild(priceContainer);
+            
+            menuItem.appendChild(itemImage);
+            menuItem.appendChild(itemContent);
+
+            return menuItem;
+        }
+
+        function getTagClass(tag) {
+            const tagClasses = {
+                'vegetarian': 'vegetarian',
+                'vegan': 'vegan',
+                'spicy': 'spicy',
+                'gluten-free': 'gluten-free'
+            };
+            return tagClasses[tag] || 'default';
+        }
+
+        function getTagText(tag) {
+            const tagTexts = {
+                'vegetarian': 'VEJETERYAN',
+                'vegan': 'VEGAN',
+                'spicy': 'ACILI',
+                'gluten-free': 'GLÜTENSİZ'
+            };
+            return tagTexts[tag] || tag.toUpperCase();
+        }
+
+        // Setup navigation with smooth scrolling
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        const headerHeight = document.querySelector('.header').offsetHeight;
+                        const navHeight = document.querySelector('.nav-menu').offsetHeight;
+                        const totalOffset = headerHeight + navHeight + 20;
+                        const elementPosition = targetElement.offsetTop - totalOffset;
+                        window.scrollTo({ top: elementPosition, behavior: 'smooth' });
+                        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // Update restaurant information
+        function updateRestaurantInfo() {
+            const restaurantNameElements = document.querySelectorAll('.restaurant-name');
+            restaurantNameElements.forEach(element => {
+                element.textContent = restaurantSettings.name;
+            });
+
+            const contactInfoElement = document.querySelector('.contact-info h3');
+            if (contactInfoElement) {
+                contactInfoElement.textContent = restaurantSettings.name;
+            }
+
+            const addressElement = document.querySelector('.contact-info .address');
+            if (addressElement) {
+                addressElement.innerHTML = restaurantSettings.address;
+            }
+
+            const phoneElement = document.querySelector('.contact-info .phone-number');
+            if (phoneElement) {
+                phoneElement.textContent = restaurantSettings.phone;
+                phoneElement.href = `tel:${restaurantSettings.phone.replace(/\s/g, '')}`;
+            }
+
+            const socialLinks = document.querySelector('.social-links');
+            if (socialLinks) {
+                socialLinks.innerHTML = '';
+                if (restaurantSettings.instagram) {
+                    const instagramLink = document.createElement('a');
+                    instagramLink.href = restaurantSettings.instagram;
+                    instagramLink.target = '_blank';
+                    instagramLink.textContent = '📷';
+                    instagramLink.title = 'Instagram';
+                    socialLinks.appendChild(instagramLink);
+                }
+                if (restaurantSettings.facebook) {
+                    const facebookLink = document.createElement('a');
+                    facebookLink.href = restaurantSettings.facebook;
+                    facebookLink.target = '_blank';
+                    facebookLink.textContent = '📘';
+                    facebookLink.title = 'Facebook';
+                    socialLinks.appendChild(facebookLink);
+                }
+                if (restaurantSettings.website) {
+                    const websiteLink = document.createElement('a');
+                    websiteLink.href = restaurantSettings.website;
+                    websiteLink.target = '_blank';
+                    websiteLink.textContent = '🌐';
+                    websiteLink.title = 'Website';
+                    socialLinks.appendChild(websiteLink);
+                }
+                if (!restaurantSettings.instagram && !restaurantSettings.facebook && !restaurantSettings.website) {
+                    socialLinks.innerHTML = '<span style="opacity: 0.5; font-size: 12px;">Sosyal medya bağlantıları admin panelinden eklenebilir</span>';
+                }
+            }
+
+            const orderBtn = document.querySelector('.order-btn');
+            if (orderBtn) {
+                orderBtn.onclick = function() {
+                    window.open(`tel:${restaurantSettings.phone.replace(/\s/g, '')}`, '_self');
+                };
+            }
+        }
+
+        // Load advanced design settings
+        function loadAdvancedSettings() {
+            const advancedSettings = themeSettings.advanced || {};
+            const root = document.documentElement;
+            if (advancedSettings.titleFontSize) root.style.setProperty('--title-font-size', advancedSettings.titleFontSize + 'px');
+            if (advancedSettings.textFontSize) root.style.setProperty('--text-font-size', advancedSettings.textFontSize + 'px');
+            if (advancedSettings.priceFontSize) root.style.setProperty('--price-font-size', advancedSettings.priceFontSize + 'px');
+            if (advancedSettings.lineHeight) root.style.setProperty('--line-height', advancedSettings.lineHeight);
+            if (advancedSettings.letterSpacing) root.style.setProperty('--letter-spacing', advancedSettings.letterSpacing + 'px');
+            if (advancedSettings.containerPadding) root.style.setProperty('--container-padding', advancedSettings.containerPadding + 'px');
+            if (advancedSettings.itemMargin) root.style.setProperty('--item-margin', advancedSettings.itemMargin + 'px');
+            if (advancedSettings.sectionSpacing) root.style.setProperty('--section-spacing', advancedSettings.sectionSpacing + 'px');
+            if (advancedSettings.borderWidth) root.style.setProperty('--border-width', advancedSettings.borderWidth + 'px');
+            if (advancedSettings.shadowBlur) root.style.setProperty('--shadow-blur', advancedSettings.shadowBlur + 'px');
+            if (advancedSettings.shadowOffset) root.style.setProperty('--shadow-offset', advancedSettings.shadowOffset + 'px');
+            if (advancedSettings.shadowOpacity) root.style.setProperty('--shadow-opacity', advancedSettings.shadowOpacity);
+            if (advancedSettings.hoverScale) root.style.setProperty('--hover-scale', advancedSettings.hoverScale);
+            if (advancedSettings.transitionSpeed) root.style.setProperty('--transition-speed', advancedSettings.transitionSpeed + 'ms');
+            if (advancedSettings.maxWidth) root.style.setProperty('--max-width', advancedSettings.maxWidth + 'px');
+            if (advancedSettings.gridColumns) root.style.setProperty('--grid-columns', advancedSettings.gridColumns);
+            if (advancedSettings.gridGap) root.style.setProperty('--grid-gap', advancedSettings.gridGap + 'px');
+            if (advancedSettings.textAlign) root.style.setProperty('--text-align', advancedSettings.textAlign);
+            if (advancedSettings.titleWeight) root.style.setProperty('--title-weight', advancedSettings.titleWeight);
+            if (advancedSettings.textTransform) root.style.setProperty('--text-transform', advancedSettings.textTransform);
+            if (advancedSettings.textOpacity) root.style.setProperty('--text-opacity', advancedSettings.textOpacity);
+            if (advancedSettings.bgOpacity) root.style.setProperty('--bg-opacity', advancedSettings.bgOpacity);
+        }
+
+        // Setup enhanced navigation scrolling
+        function setupNavScroll() {
+            const navMenu = document.querySelector('.nav-menu');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            navMenu.addEventListener('mousedown', (e) => {
+                isDown = true;
+                navMenu.style.cursor = 'grabbing';
+                startX = e.pageX - navMenu.offsetLeft;
+                scrollLeft = navMenu.scrollLeft;
+                e.preventDefault();
+            });
+
+            navMenu.addEventListener('mouseleave', () => {
+                isDown = false;
+                navMenu.style.cursor = 'grab';
+            });
+
+            navMenu.addEventListener('mouseup', () => {
+                isDown = false;
+                navMenu.style.cursor = 'grab';
+            });
+
+            navMenu.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - navMenu.offsetLeft;
+                const walk = (x - startX) * 2;
+                navMenu.scrollLeft = scrollLeft - walk;
+            });
+
+            navMenu.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].pageX - navMenu.offsetLeft;
+                scrollLeft = navMenu.scrollLeft;
+            }, { passive: true });
+
+            navMenu.addEventListener('touchmove', (e) => {
+                const x = e.touches[0].pageX - navMenu.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                navMenu.scrollLeft = scrollLeft - walk;
+            }, { passive: true });
+
+            navMenu.style.cursor = 'grab';
+        }
+
+        // Setup header shrinking on scroll
+        function setupHeaderShrink() {
+            const header = document.querySelector('.header');
+            let ticking = false;
+            
+            function updateHeader() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                if (scrollTop < 0) return;
+                if (scrollTop > 80) {
+                    if (!header.classList.contains('scrolled')) {
+                        header.classList.add('scrolled');
+                    }
+                } else if (scrollTop < 60) {
+                    if (header.classList.contains('scrolled')) {
+                        header.classList.remove('scrolled');
+                    }
+                }
+                ticking = false;
+            }
+            
+            function requestTick() {
+                if (!ticking) {
+                    requestAnimationFrame(updateHeader);
+                    ticking = true;
+                }
+            }
+            
+            window.addEventListener('scroll', requestTick, { passive: true });
+        }
+
+        // Setup scroll spy to highlight active navigation items
+        function setupScrollSpy() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.menu-section');
+            
+            function updateActiveNav() {
+                const headerHeight = document.querySelector('.header').offsetHeight;
+                const navHeight = document.querySelector('.nav-menu').offsetHeight;
+                const offset = headerHeight + navHeight + 50;
+                let currentSection = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - offset;
+                    const sectionHeight = section.offsetHeight;
+                    const scrollPosition = window.pageYOffset;
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        currentSection = section.id;
+                    }
+                });
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === '#' + currentSection) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav();
+        }
+
+        // Show error message to user
+        function showErrorOnPage(message) {
+            const existingError = document.querySelector('.data-error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'data-error-message';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #ff6b6b;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 90%;
+                text-align: center;
+                animation: slideDown 0.3s ease;
+            `;
+            errorDiv.textContent = message;
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(errorDiv);
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.style.animation = 'slideDown 0.3s ease reverse';
+                    setTimeout(() => {
+                        if (errorDiv.parentNode) {
+                            errorDiv.parentNode.removeChild(errorDiv);
+                        }
+                    }, 300);
+                }
+            }, 8000);
+        }
+
+
+        // Combined initialization on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDataFromFiles();
+            loadThemeSettings();
+            updateRestaurantInfo();
+            generateNavigationMenu();
+            generateMenuSections();
+            setupNavigation();
+            loadAdvancedSettings();
+            setupScrollSpy();
+            setupHeaderShrink();
+            setupNavScroll();
+            
+            // Listen for updates from admin panel
+            setupAdminUpdatesListener();
+        });
+
+        // Setup listener for admin panel updates
+        function setupAdminUpdatesListener() {
+            window.addEventListener('message', async (event) => {
+                if (event.data.type === 'DATA_UPDATED') {
+                    console.log('📡 Received data update from admin panel');
+                    
+                    // Update local data
+                    menuItems = event.data.data.menuItems;
+                    categories = event.data.data.categories;
+                    categoryOrder = event.data.data.categoryOrder;
+                    restaurantSettings = event.data.data.restaurantSettings;
+                    themeSettings = event.data.data.themeSettings;
+                    
+                    // Refresh the UI
+                    loadThemeSettings();
+                    updateRestaurantInfo();
+                    generateNavigationMenu();
+                    generateMenuSections();
+                    setupNavigation();
+                    loadAdvancedSettings();
+                    
+                    console.log('✅ Menu updated from admin panel');
+                }
+            });
+            
+            // Also check for localStorage updates every 2 seconds
+            setInterval(() => {
+                const localUpdate = localStorage.getItem('menuItems');
+                if (localUpdate && localUpdate !== JSON.stringify(menuItems)) {
+                    console.log('📡 Detected localStorage update, refreshing menu...');
+                    location.reload();
+                }
+            }, 2000);
+        }
+
+        // ==================== CART SYSTEM ====================
+        
+        // Global cart data
+        let tableData = {
+            persons: {}, // personId: { name: string, items: [] }
+            currentPerson: null,
+            selectedTable: null
+        };
+
+        // Initialize cart system
+        function initializeCartSystem() {
+            loadTableData();
+            updateCartCount();
+            updatePersonSelect();
+        }
+
+        // Load table data from localStorage
+        function loadTableData() {
+            const saved = localStorage.getItem('tableData');
+            if (saved) {
+                tableData = JSON.parse(saved);
+            }
+        }
+
+        // Save table data to localStorage
+        function saveTableData() {
+            localStorage.setItem('tableData', JSON.stringify(tableData));
+            updateCartCount();
+        }
+
+        // Add item to cart
+        function addToCart(item) {
+            if (!tableData.selectedTable) {
+                alert('Lütfen önce masa numaranızı seçin!');
+                openCartModal();
+                return;
+            }
+
+            if (!tableData.currentPerson) {
+                alert('Lütfen önce bir kişi seçin veya yeni kişi ekleyin!');
+                openCartModal();
+                return;
+            }
+
+            const personId = tableData.currentPerson;
+            const person = tableData.persons[personId];
+            
+            // Check if item already exists in person's cart
+            const existingItem = person.items.find(cartItem => cartItem.id === item.id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                person.items.push({
+                    id: item.id,
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    quantity: 1
+                });
+            }
+
+            saveTableData();
+            updateCartDisplay();
+            
+            // Show success feedback
+            showAddToCartFeedback();
+        }
+
+        // Show feedback when item added to cart
+        function showAddToCartFeedback() {
+            const cartIcon = document.querySelector('.cart-icon');
+            cartIcon.style.animation = 'none';
+            setTimeout(() => {
+                cartIcon.style.animation = 'bounce 0.6s ease';
+            }, 10);
+        }
+
+        // Update cart count in header
+        function updateCartCount() {
+            const cartCount = document.getElementById('cartCount');
+            const totalItems = Object.values(tableData.persons).reduce((total, person) => {
+                return total + person.items.reduce((sum, item) => sum + item.quantity, 0);
+            }, 0);
+            cartCount.textContent = totalItems;
+        }
+
+        // Open cart modal
+        function openCartModal() {
+            document.getElementById('cartModal').style.display = 'block';
+            loadAvailableTables();
+            updateCartModalDisplay();
+        }
+
+        // Load available tables from admin settings
+        function loadAvailableTables() {
+            const tableSelect = document.getElementById('tableSelect');
+            const adminTableSettings = localStorage.getItem('tableSettings');
+            
+            tableSelect.innerHTML = '<option value="">Masa numaranızı seçin</option>';
+            
+            if (adminTableSettings) {
+                const settings = JSON.parse(adminTableSettings);
+                for (let i = 1; i <= settings.tableCount; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Masa ${i}`;
+                    tableSelect.appendChild(option);
+                }
+            } else {
+                // Default tables if admin hasn't set up
+                for (let i = 1; i <= 20; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Masa ${i}`;
+                    tableSelect.appendChild(option);
+                }
+            }
+
+            // Select current table if exists
+            if (tableData.selectedTable) {
+                tableSelect.value = tableData.selectedTable;
+            }
+        }
+
+        // Select table
+        function selectTable() {
+            const tableSelect = document.getElementById('tableSelect');
+            const selectedTable = parseInt(tableSelect.value);
+            
+            if (selectedTable) {
+                tableData.selectedTable = selectedTable;
+                saveTableData();
+                updateCartModalDisplay();
+            }
+        }
+
+        // Change table
+        function changeTable() {
+            if (confirm('Masa değiştirmek istediğinizden emin misiniz? Mevcut siparişler silinecek!')) {
+                tableData = {
+                    persons: {},
+                    currentPerson: null,
+                    selectedTable: null
+                };
+                saveTableData();
+                updateCartModalDisplay();
+            }
+        }
+
+        // Update cart modal display based on state
+        function updateCartModalDisplay() {
+            const tableSelection = document.getElementById('tableSelection');
+            const selectedTableInfo = document.getElementById('selectedTableInfo');
+            const personSection = document.getElementById('personSection');
+            const currentPersonCart = document.getElementById('currentPersonCart');
+            const tableSummary = document.getElementById('tableSummary');
+            const modalFooter = document.getElementById('modalFooter');
+            const selectedTableTitle = document.getElementById('selectedTableTitle');
+
+            if (!tableData.selectedTable) {
+                // Show table selection
+                tableSelection.style.display = 'block';
+                selectedTableInfo.style.display = 'none';
+                personSection.style.display = 'none';
+                currentPersonCart.style.display = 'none';
+                tableSummary.style.display = 'none';
+                modalFooter.style.display = 'none';
+            } else {
+                // Show selected table and cart functions
+                tableSelection.style.display = 'none';
+                selectedTableInfo.style.display = 'block';
+                personSection.style.display = 'block';
+                currentPersonCart.style.display = 'block';
+                tableSummary.style.display = 'block';
+                modalFooter.style.display = 'flex';
+
+                selectedTableTitle.textContent = `🏠 Masa ${tableData.selectedTable}`;
+                
+                updatePersonSelect();
+                updateCartDisplay();
+                updateTableSummary();
+            }
+        }
+
+        // Close cart modal
+        function closeCartModal() {
+            document.getElementById('cartModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('cartModal');
+            if (event.target === modal) {
+                closeCartModal();
+            }
+        });
+
+        // Update person select dropdown
+        function updatePersonSelect() {
+            const select = document.getElementById('currentPersonSelect');
+            select.innerHTML = '<option value="">Kişi seçin veya yeni ekleyin</option>';
+            
+            Object.keys(tableData.persons).forEach(personId => {
+                const person = tableData.persons[personId];
+                const option = document.createElement('option');
+                option.value = personId;
+                option.textContent = person.name;
+                if (personId === tableData.currentPerson) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        // Switch current person
+        function switchPerson() {
+            const select = document.getElementById('currentPersonSelect');
+            tableData.currentPerson = select.value || null;
+            saveTableData();
+            updateCartDisplay();
+        }
+
+        // Show add person form
+        function showAddPersonForm() {
+            document.getElementById('addPersonForm').style.display = 'flex';
+            document.getElementById('newPersonName').focus();
+        }
+
+        // Hide add person form
+        function hideAddPersonForm() {
+            document.getElementById('addPersonForm').style.display = 'none';
+            document.getElementById('newPersonName').value = '';
+        }
+
+        // Add new person
+        function addNewPerson() {
+            const nameInput = document.getElementById('newPersonName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Lütfen bir isim girin!');
+                return;
+            }
+
+            if (name.length > 20) {
+                alert('İsim en fazla 20 karakter olabilir!');
+                return;
+            }
+
+            // Check if name already exists
+            const existingPerson = Object.values(tableData.persons).find(person => 
+                person.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (existingPerson) {
+                alert('Bu isimde bir kişi zaten var!');
+                return;
+            }
+
+            const personId = 'person_' + Date.now();
+            tableData.persons[personId] = {
+                name: name,
+                items: []
+            };
+            
+            tableData.currentPerson = personId;
+            saveTableData();
+            updatePersonSelect();
+            updateCartDisplay();
+            hideAddPersonForm();
+        }
+
+        // Update current person's cart display
+        function updateCartDisplay() {
+            const titleElement = document.getElementById('currentPersonTitle');
+            const itemsElement = document.getElementById('currentPersonItems');
+            const totalElement = document.getElementById('currentPersonTotal');
+
+            if (!tableData.currentPerson || !tableData.persons[tableData.currentPerson]) {
+                titleElement.textContent = 'Kişi Seçin';
+                itemsElement.innerHTML = '<p class="empty-cart">Henüz sipariş verilmemiş</p>';
+                totalElement.textContent = '0';
+                return;
+            }
+
+            const person = tableData.persons[tableData.currentPerson];
+            titleElement.textContent = `${person.name} - Sipariş Listesi`;
+
+            if (person.items.length === 0) {
+                itemsElement.innerHTML = '<p class="empty-cart">Henüz sipariş verilmemiş</p>';
+                totalElement.textContent = '0';
+                return;
+            }
+
+            itemsElement.innerHTML = '';
+            let personTotal = 0;
+
+            person.items.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'cart-item';
+                
+                const itemTotal = item.price * item.quantity;
+                personTotal += itemTotal;
+
+                itemElement.innerHTML = `
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">${item.price} ₺</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="quantity-btn" onclick="updateQuantity('${tableData.currentPerson}', ${index}, -1)">-</button>
+                        <span class="quantity-display">${item.quantity}</span>
+                        <button class="quantity-btn" onclick="updateQuantity('${tableData.currentPerson}', ${index}, 1)">+</button>
+                    </div>
+                `;
+                
+                itemsElement.appendChild(itemElement);
+            });
+
+            totalElement.textContent = personTotal.toFixed(2);
+        }
+
+        // Update item quantity
+        function updateQuantity(personId, itemIndex, change) {
+            const person = tableData.persons[personId];
+            if (!person || !person.items[itemIndex]) return;
+
+            person.items[itemIndex].quantity += change;
+
+            if (person.items[itemIndex].quantity <= 0) {
+                person.items.splice(itemIndex, 1);
+            }
+
+            saveTableData();
+            updateCartDisplay();
+            updateTableSummary();
+        }
+
+        // Update table summary
+        function updateTableSummary() {
+            const summaryElement = document.getElementById('tableSummaryItems');
+            const totalElement = document.getElementById('tableTotal');
+
+            summaryElement.innerHTML = '';
+            let tableTotal = 0;
+
+            Object.keys(tableData.persons).forEach(personId => {
+                const person = tableData.persons[personId];
+                if (person.items.length === 0) return;
+
+                const personGroup = document.createElement('div');
+                personGroup.className = 'table-person-group';
+
+                const personName = document.createElement('div');
+                personName.className = 'table-person-name';
+                personName.textContent = `👤 ${person.name}`;
+                personGroup.appendChild(personName);
+
+                const personItems = document.createElement('div');
+                personItems.className = 'table-person-items';
+
+                let personTotal = 0;
+
+                person.items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'table-person-item';
+                    
+                    const itemTotal = item.price * item.quantity;
+                    personTotal += itemTotal;
+                    
+                    itemElement.innerHTML = `
+                        <span>${item.name} x${item.quantity}</span>
+                        <span>${itemTotal.toFixed(2)} ₺</span>
+                    `;
+                    
+                    personItems.appendChild(itemElement);
+                });
+
+                personGroup.appendChild(personItems);
+
+                const personTotalElement = document.createElement('div');
+                personTotalElement.className = 'table-person-total';
+                personTotalElement.textContent = `Toplam: ${personTotal.toFixed(2)} ₺`;
+                personGroup.appendChild(personTotalElement);
+
+                summaryElement.appendChild(personGroup);
+                tableTotal += personTotal;
+            });
+
+            totalElement.textContent = tableTotal.toFixed(2);
+        }
+
+        // Clear entire table
+        function clearTable() {
+            if (confirm(`Masa ${tableData.selectedTable} siparişini tamamen temizlemek istediğinizden emin misiniz?`)) {
+                tableData.persons = {};
+                tableData.currentPerson = null;
+                // Keep selectedTable so they don't have to reselect
+                saveTableData();
+                updateCartModalDisplay();
+            }
+        }
+
+        // Finalize order
+        function finalizeOrder() {
+            const tableTotal = document.getElementById('tableTotal').textContent;
+            
+            if (!tableData.selectedTable) {
+                alert('Masa seçilmemiş!');
+                return;
+            }
+
+            if (Object.keys(tableData.persons).length === 0) {
+                alert('Masa boş! Önce sipariş verin.');
+                return;
+            }
+
+            let orderSummary = `📋 SİPARİŞ ÖZETİ - MASA ${tableData.selectedTable}\\n\\n`;
+            
+            Object.keys(tableData.persons).forEach(personId => {
+                const person = tableData.persons[personId];
+                if (person.items.length > 0) {
+                    orderSummary += `👤 ${person.name}:\\n`;
+                    person.items.forEach(item => {
+                        orderSummary += `   • ${item.name} x${item.quantity} = ${(item.price * item.quantity).toFixed(2)} ₺\\n`;
+                    });
+                    orderSummary += '\\n';
+                }
+            });
+            
+            orderSummary += `💰 MASA TOPLAMI: ${tableTotal} ₺`;
+            
+            if (confirm(orderSummary + '\\n\\nSiparişi onaylıyor musunuz?')) {
+                // Show order confirmation
+                const orderConfirmation = `
+                    ✅ SİPARİŞİNİZ ALINDI!
+                    
+                    📞 Restoran: ${restaurantSettings.phone || '0538 599 50 40'}
+                    🏠 Masa: ${tableData.selectedTable}
+                    💰 Toplam: ${tableTotal} ₺
+                    
+                    Siparişiniz hazırlanıyor...
+                `;
+                
+                alert(orderConfirmation);
+                
+                // Keep the order data but show it as submitted
+                // You could add a 'submitted' flag here
+            }
+        }
+
+        // Add bounce animation for cart
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-10px); }
+                60% { transform: translateY(-5px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize cart system when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeCartSystem, 100);
+        });
+    </script>
+</body>
+</html>
