@@ -3654,19 +3654,10 @@ function applyQuickFilter() {
             break;
             
         case 'all':
-            // Tüm zamanlar - en eski veriyi bul
-            const allCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-            if (allCompletedOrders.length > 0) {
-                const oldestOrder = allCompletedOrders.reduce((oldest, order) => {
-                    const orderDate = new Date(order.completedAt);
-                    return orderDate < oldest ? orderDate : oldest;
-                }, new Date());
-                startDate = new Date(oldestOrder);
-            } else {
-                startDate = new Date(today);
-                startDate.setMonth(today.getMonth() - 1); // Son 1 ay
-            }
-            endDate = new Date(today);
+            // Tüm zamanlar - çok geniş bir tarih aralığı kullan
+            startDate = new Date(2020, 0, 1); // 1 Ocak 2020
+            endDate = new Date(2030, 11, 31); // 31 Aralık 2030
+            console.log('📅 Tüm zamanlar seçildi - çok geniş tarih aralığı kullanılıyor');
             break;
     }
     
@@ -3684,6 +3675,18 @@ function generateStatistics() {
     // ÖNCE tüm verileri göster
     const allGlobalOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
     console.log('🔍 TOPLAM GLOBAL SİPARİŞLER:', allGlobalOrders.length);
+    
+    // Her siparişi detaylı göster
+    allGlobalOrders.forEach((order, index) => {
+        console.log(`📋 Global Sipariş ${index + 1}:`, {
+            id: order.id,
+            tableNumber: order.tableNumber,
+            customerName: order.customerName,
+            completedAt: order.completedAt,
+            totalAmount: order.totalAmount,
+            source: order.source
+        });
+    });
     
     if (allGlobalOrders.length > 0) {
         console.log('📅 En eski sipariş:', allGlobalOrders[0]?.completedAt);
@@ -3710,6 +3713,7 @@ function generateStatistics() {
     const end = new Date(endDate + 'T23:59:59'); // End of day
     
     console.log(`📅 Seçilen tarih aralığı: ${start.toLocaleDateString('tr-TR')} - ${end.toLocaleDateString('tr-TR')}`);
+    console.log(`📅 Seçilen tarih aralığı (UTC): ${start.toISOString()} - ${end.toISOString()}`);
     
     // Get filtered completed orders
     const filteredOrders = getFilteredCompletedOrders(start, end);
@@ -3717,7 +3721,24 @@ function generateStatistics() {
     
     if (filteredOrders.length === 0) {
         console.warn('⚠️ Seçilen tarih aralığında sipariş bulunamadı!');
+        
+        // Alternatif olarak tüm siparişleri göster
+        if (allGlobalOrders.length > 0) {
+            console.log('🔄 Tarih filtresi devre dışı bırakılıyor, TÜM siparişler kullanılıyor...');
+            const allOrders = allGlobalOrders; // Tüm siparişleri kullan
+            generateKeyMetrics(allOrders);
+            generateTopProducts(allOrders);
+            generateCategoryPerformance(allOrders);
+            generateTimeAnalysis(allOrders);
+            generatePaymentAnalysis(allOrders);
+            generateTablePerformance(allOrders);
+            generateSalesChart(allOrders, start, end);
+            console.log('✅ TÜM siparişlerle istatistikler oluşturuldu');
+            return;
+        }
+        
         alert(`Seçilen tarih aralığında (${start.toLocaleDateString('tr-TR')} - ${end.toLocaleDateString('tr-TR')}) sipariş bulunamadı!\n\nLütfen farklı bir tarih aralığı deneyin.`);
+        return;
     }
     
     // Generate all statistics
@@ -3735,10 +3756,19 @@ function generateStatistics() {
 // Get completed orders within date range
 function getFilteredCompletedOrders(startDate, endDate) {
     console.log('📦 Tamamlanan siparişler toplanıyor...');
+    console.log('📅 Başlangıç tarihi:', startDate.toISOString());
+    console.log('📅 Bitiş tarihi:', endDate.toISOString());
     
     // Global completedOrders listesi
     const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
     console.log(`📋 Global tamamlanan siparişler: ${globalCompletedOrders.length}`);
+    
+    // Her sipariş için tarih kontrolü yap
+    globalCompletedOrders.forEach((order, index) => {
+        const orderDate = new Date(order.completedAt);
+        const isInRange = orderDate >= startDate && orderDate <= endDate;
+        console.log(`📋 Sipariş ${index + 1}: ${order.customerName} - ${orderDate.toISOString()} - Aralıkta: ${isInRange}`);
+    });
     
     // Masalardaki tamamlanan siparişleri de topla
     const tableCompletedOrders = [];
@@ -3762,13 +3792,29 @@ function getFilteredCompletedOrders(startDate, endDate) {
     
     // Tarih filtresi uygula
     const filteredOrders = allCompletedOrders.filter(order => {
-        if (!order.completedAt) return false;
+        if (!order.completedAt) {
+            console.log('❌ completedAt eksik:', order);
+            return false;
+        }
         
         const orderDate = new Date(order.completedAt);
-        return orderDate >= startDate && orderDate <= endDate;
+        const isValid = !isNaN(orderDate.getTime());
+        const isInRange = orderDate >= startDate && orderDate <= endDate;
+        
+        if (!isValid) {
+            console.log('❌ Geçersiz tarih:', order.completedAt, order);
+        }
+        
+        return isValid && isInRange;
     });
     
     console.log(`🗓️ Tarih filtresinden sonra: ${filteredOrders.length} sipariş`);
+    
+    // Eğer tarih filtresi hiç sipariş bulamadıysa, tüm siparişleri döndür
+    if (filteredOrders.length === 0 && allCompletedOrders.length > 0) {
+        console.log('⚠️ Tarih filtresi hiç sonuç bulamadı, tüm siparişler döndürülüyor...');
+        return allCompletedOrders;
+    }
     
     return filteredOrders;
 }
