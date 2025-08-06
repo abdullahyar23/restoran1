@@ -3263,25 +3263,14 @@ function processAllPayments() {
                     person.paidAmount = personTotal;
                     person.statisticsProcessed = true; // Duplikasyon önleyici
                     
-                    // Tamamlanan siparişi istatistikler için kaydet
-                    const completedOrder = {
-                        id: `${currentTableId}_${personName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                        tableNumber: currentTableId,
-                        customerName: personName,
-                        items: person.items || [],
-                        totalAmount: personTotal,
-                        paymentMethod: 'cash', // Default olarak nakit
-                        completedAt: new Date().toISOString(),
-                        paidAt: new Date().toISOString(),
-                        source: 'bulk_payment' // İstatistik kaynağını belirt
-                    };
-                    
-                    // CompletedOrders listesine ekle
-                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-                    completedOrders.push(completedOrder);
-                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-                    
-                    console.log('📊 Toplu ödeme - İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+                    // Tamamlanan siparişi istatistikler için merkezi fonksiyonla kaydet
+                    saveOrderToStatistics(
+                        currentTableId,
+                        personName,
+                        person.items || [],
+                        'bulk_payment',
+                        'cash'
+                    );
                 }
             }
         });
@@ -3543,25 +3532,14 @@ function processPersonPayment(personName) {
         
         console.log('✅ Ödeme kaydedildi:', tableData.persons[personName]);
         
-        // Tamamlanan siparişi istatistikler için kaydet
-        const completedOrder = {
-            id: `${currentTableId}_${personName}_${Date.now()}`,
-            tableNumber: currentTableId,
-            customerName: personName,
-            items: personData.items || [],
-            totalAmount: personTotal,
-            paymentMethod: 'cash', // Default olarak nakit, gerekirse güncellenebilir
-            completedAt: new Date().toISOString(),
-            paidAt: new Date().toISOString(),
-            source: 'individual_payment' // İstatistik kaynağını belirt
-        };
-        
-        // CompletedOrders listesine ekle
-        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-        completedOrders.push(completedOrder);
-        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-        
-        console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+        // Tamamlanan siparişi istatistikler için merkezi fonksiyonla kaydet
+        saveOrderToStatistics(
+            currentTableId,
+            personName,
+            personData.items || [],
+            'individual_payment',
+            'cash'
+        );
         
         // Masa tamamen ödendiyse müşteri sepetini temizle
         if (isTableFullyPaid(tableData)) {
@@ -3595,6 +3573,157 @@ function showMessage(message, type = 'info') {
     document.body.appendChild(messageDiv);
     
     setTimeout(() => messageDiv.remove(), 3000);
+}
+
+// ==================== CENTRALIZED ORDER STATISTICS SYSTEM ====================
+
+// Merkezi sipariş kaydetme fonksiyonu - Tüm siparişleri istatistikler için kaydet
+function saveOrderToStatistics(tableNumber, customerName, items, source = 'manual', paymentMethod = 'cash') {
+    console.log('📊 SİPARİŞ İSTATİSTİK KAYDI:', {
+        tableNumber,
+        customerName,
+        itemCount: items.length,
+        source,
+        paymentMethod
+    });
+    
+    if (!items || items.length === 0) {
+        console.log('❌ Sipariş boş, istatistiğe kaydedilmedi');
+        return null;
+    }
+    
+    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    const completedOrder = {
+        id: `${tableNumber}_${customerName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        tableNumber: tableNumber,
+        customerName: customerName,
+        items: JSON.parse(JSON.stringify(items)), // Deep copy
+        totalAmount: totalAmount,
+        paymentMethod: paymentMethod,
+        completedAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+        source: source,
+        timestamp: Date.now()
+    };
+    
+    // CompletedOrders listesine ekle
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    completedOrders.push(completedOrder);
+    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+    
+    console.log('✅ İstatistik kaydı oluşturuldu:', completedOrder.id);
+    console.log('📈 Toplam kayıtlı sipariş sayısı:', completedOrders.length);
+    
+    return completedOrder;
+}
+
+// Masa tüm siparişlerini istatistiklere kaydet
+function saveAllTableOrdersToStatistics(tableNumber, tableData, source = 'bulk_save') {
+    console.log('📊 MASA TÜM SİPARİŞLERİ KAYDETME BAŞLADI:', tableNumber);
+    
+    if (!tableData || !tableData.orders) {
+        console.log('❌ Masa verisi bulunamadı');
+        return 0;
+    }
+    
+    let savedCount = 0;
+    
+    Object.keys(tableData.orders).forEach(personId => {
+        const person = tableData.orders[personId];
+        if (person && person.items && person.items.length > 0) {
+            const savedOrder = saveOrderToStatistics(
+                tableNumber, 
+                person.name, 
+                person.items, 
+                source
+            );
+            if (savedOrder) savedCount++;
+        }
+    });
+    
+    console.log(`✅ Masa ${tableNumber} - ${savedCount} sipariş istatistiklere kaydedildi`);
+    return savedCount;
+}
+
+// Mevcut tüm masa siparişlerini tarayıp istatistiklere kaydet
+function backupAllActiveOrdersToStatistics() {
+    console.log('🔄 TÜM AKTİF SİPARİŞLER İSTATİSTİKLERE YEDEKLENBYOR...');
+    
+    let totalSaved = 0;
+    
+    if (tableSettings && tableSettings.tables) {
+        Object.keys(tableSettings.tables).forEach(tableNum => {
+            const table = tableSettings.tables[tableNum];
+            if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
+                const savedCount = saveAllTableOrdersToStatistics(tableNum, table, 'backup_sync');
+                totalSaved += savedCount;
+            }
+        });
+    }
+    
+    showMessage(`📊 ${totalSaved} aktif sipariş istatistiklere yedeklendi!`, 'success');
+    console.log(`✅ TOPLAM ${totalSaved} aktif sipariş istatistiklere yedeklendi`);
+    return totalSaved;
+}
+
+// Sipariş verilerini debug et
+function showOrdersDebugInfo() {
+    console.log('🔍 SİPARİŞ VERİLERİ DEBUG BAŞLADI');
+    
+    // CompletedOrders kontrolü
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    console.log('📊 COMPLETED ORDERS:', completedOrders.length, 'sipariş');
+    
+    // Masa siparişleri kontrolü
+    let activeTables = 0;
+    let activeOrders = 0;
+    
+    if (tableSettings && tableSettings.tables) {
+        Object.keys(tableSettings.tables).forEach(tableNum => {
+            const table = tableSettings.tables[tableNum];
+            if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
+                activeTables++;
+                const orderCount = Object.keys(table.orders).length;
+                activeOrders += orderCount;
+                console.log(`🏠 Masa ${tableNum}: ${orderCount} aktif sipariş`);
+                
+                Object.keys(table.orders).forEach(personId => {
+                    const person = table.orders[personId];
+                    console.log(`  👤 ${person.name}: ${person.items ? person.items.length : 0} ürün`);
+                });
+            }
+        });
+    }
+    
+    // Tarih dağılımı
+    if (completedOrders.length > 0) {
+        const dateCount = {};
+        completedOrders.forEach(order => {
+            const date = new Date(order.completedAt).toLocaleDateString('tr-TR');
+            dateCount[date] = (dateCount[date] || 0) + 1;
+        });
+        console.log('📅 Tarih dağılımı:', dateCount);
+    }
+    
+    // Özet
+    const summary = `
+📊 SİPARİŞ VERİLERİ ÖZETİ:
+• Tamamlanan siparişler: ${completedOrders.length}
+• Aktif masalar: ${activeTables}
+• Aktif siparişler: ${activeOrders}
+• Toplam veri: ${completedOrders.length + activeOrders}
+    `.trim();
+    
+    console.log(summary);
+    alert(summary);
+    
+    return {
+        completedOrders: completedOrders.length,
+        activeTables,
+        activeOrders,
+        total: completedOrders.length + activeOrders
+    };
 }
 
 // ==================== STATISTICS SYSTEM ====================
@@ -4333,6 +4462,9 @@ EN ÇOK SATAN ÜRÜNLER:
 window.generateStatistics = generateStatistics;
 window.applyQuickFilter = applyQuickFilter;
 window.exportStatistics = exportStatistics;
+window.showOrdersDebugInfo = showOrdersDebugInfo;
+window.backupAllActiveOrdersToStatistics = backupAllActiveOrdersToStatistics;
+window.saveOrderToStatistics = saveOrderToStatistics;
 
 // ==================== DUPLICATE PREVENTION SYSTEM ====================
 
