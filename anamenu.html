@@ -526,6 +526,7 @@
             color: var(--secondary-color);
         }
 
+<<<<<<< HEAD
         .table-selector select option:disabled {
             color: #dc3545 !important;
             background-color: #f8d7da !important;
@@ -536,6 +537,8 @@
             font-weight: 600;
         }
 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         .selected-table-info {
             padding: 15px;
             background: linear-gradient(135deg, var(--primary-color), #c0392b);
@@ -608,6 +611,7 @@
             font-size: 16px;
         }
 
+<<<<<<< HEAD
         .go-to-menu-section {
             margin-top: 15px;
             padding: 20px;
@@ -654,6 +658,8 @@
             transform: translateY(0) !important;
         }
 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         .person-cart {
             padding: 20px;
             border-bottom: 2px solid #ecf0f1;
@@ -724,6 +730,7 @@
             text-align: center;
         }
 
+<<<<<<< HEAD
         .quantity-display.readonly {
             background: #f8f9fa;
             padding: 5px 10px;
@@ -763,6 +770,8 @@
             border: 1px solid #f5c6cb;
         }
 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         .person-total {
             text-align: right;
             padding: 15px;
@@ -913,6 +922,7 @@
             .modal-footer {
                 flex-direction: column;
             }
+<<<<<<< HEAD
             
             .go-to-menu-section {
                 margin-top: 10px;
@@ -923,6 +933,8 @@
                 padding: 10px 25px !important;
                 font-size: 16px !important;
             }
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         }
 
         /* Footer */
@@ -1073,6 +1085,7 @@
                         <button class="btn-success" onclick="addNewPerson()">Ekle</button>
                         <button class="btn-cancel" onclick="hideAddPersonForm()">İptal</button>
                     </div>
+<<<<<<< HEAD
                     
                     <!-- Go to Menu Button (shown after person is added) -->
                     <div id="goToMenuSection" class="go-to-menu-section" style="display: none;">
@@ -1083,6 +1096,8 @@
                             </button>
                         </div>
                     </div>
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 </div>
 
                 <!-- Current Person's Cart -->
@@ -1785,9 +1800,12 @@
             setupHeaderShrink();
             setupNavScroll();
             
+<<<<<<< HEAD
             // Load available tables
             loadAvailableTables();
             
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             // Listen for updates from admin panel
             setupAdminUpdatesListener();
         });
@@ -1824,9 +1842,12 @@
                     console.log('📡 Detected localStorage update, refreshing menu...');
                     location.reload();
                 }
+<<<<<<< HEAD
                 
                 // Check for table updates and refresh table list
                 loadAvailableTables();
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             }, 2000);
         }
 
@@ -1877,28 +1898,38 @@
             const personId = tableData.currentPerson;
             const person = tableData.persons[personId];
             
+<<<<<<< HEAD
             // Determine current order round and if it's additional order
             const currentRound = (tableData.orderRound || 0) + 1;
             const isAdditionalOrder = tableData.orderSubmitted && tableData.lastOrderRound > 0;
             
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             // Check if item already exists in person's cart
             const existingItem = person.items.find(cartItem => cartItem.id === item.id);
             
             if (existingItem) {
                 existingItem.quantity += 1;
+<<<<<<< HEAD
                 // Update timestamp for quantity changes in additional orders
                 if (isAdditionalOrder && !existingItem.isSubmitted) {
                     existingItem.lastModified = new Date().toISOString();
                 }
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             } else {
                 person.items.push({
                     id: item.id,
                     name: item.name,
                     price: parseFloat(item.price),
+<<<<<<< HEAD
                     quantity: 1,
                     orderRound: currentRound,
                     isAdditionalOrder: isAdditionalOrder,
                     addedAt: new Date().toISOString()
+=======
+                    quantity: 1
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 });
             }
 
@@ -1943,6 +1974,7 @@
             
             if (adminTableSettings) {
                 const settings = JSON.parse(adminTableSettings);
+<<<<<<< HEAD
                 
                 for (let i = 1; i <= settings.tableCount; i++) {
                     const option = document.createElement('option');
@@ -1979,6 +2011,12 @@
                         option.style.color = '#28a745';
                     }
                     
+=======
+                for (let i = 1; i <= settings.tableCount; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Masa ${i}`;
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                     tableSelect.appendChild(option);
                 }
             } else {
@@ -1986,8 +2024,12 @@
                 for (let i = 1; i <= 20; i++) {
                     const option = document.createElement('option');
                     option.value = i;
+<<<<<<< HEAD
                     option.textContent = `Masa ${i} - Boş`;
                     option.style.color = '#28a745';
+=======
+                    option.textContent = `Masa ${i}`;
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                     tableSelect.appendChild(option);
                 }
             }
@@ -2004,6 +2046,7 @@
             const selectedTable = parseInt(tableSelect.value);
             
             if (selectedTable) {
+<<<<<<< HEAD
                 // Check if table is occupied before allowing selection
                 const adminTableSettings = localStorage.getItem('tableSettings');
                 let isTableOccupied = false;
@@ -2027,6 +2070,8 @@
                     return;
                 }
                 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 tableData.selectedTable = selectedTable;
                 saveTableData();
                 updateCartModalDisplay();
@@ -2078,7 +2123,10 @@
                 updatePersonSelect();
                 updateCartDisplay();
                 updateTableSummary();
+<<<<<<< HEAD
                 updateFinalizeButtonStatus();
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             }
         }
 
@@ -2118,6 +2166,7 @@
             tableData.currentPerson = select.value || null;
             saveTableData();
             updateCartDisplay();
+<<<<<<< HEAD
             
             // Show "Go to Menu" button if a person is selected
             if (tableData.currentPerson) {
@@ -2125,6 +2174,8 @@
             } else {
                 document.getElementById('goToMenuSection').style.display = 'none';
             }
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         }
 
         // Show add person form
@@ -2137,6 +2188,7 @@
         function hideAddPersonForm() {
             document.getElementById('addPersonForm').style.display = 'none';
             document.getElementById('newPersonName').value = '';
+<<<<<<< HEAD
             // Hide go to menu button when form is hidden
             document.getElementById('goToMenuSection').style.display = 'none';
         }
@@ -2159,6 +2211,8 @@
             
             // Hide the go to menu button
             document.getElementById('goToMenuSection').style.display = 'none';
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         }
 
         // Add new person
@@ -2197,9 +2251,12 @@
             updatePersonSelect();
             updateCartDisplay();
             hideAddPersonForm();
+<<<<<<< HEAD
             
             // Show "Go to Menu" button after person is added
             showGoToMenuButton();
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         }
 
         // Update current person's cart display
@@ -2234,6 +2291,7 @@
                 const itemTotal = item.price * item.quantity;
                 personTotal += itemTotal;
 
+<<<<<<< HEAD
                 // Check if item is submitted (no longer editable)
                 const isSubmitted = item.isSubmitted || false;
                 const isAdditionalOrder = tableData.orderSubmitted && tableData.lastOrderRound > 0;
@@ -2267,12 +2325,22 @@
                     `;
                 }
 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 itemElement.innerHTML = `
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.name}</div>
                         <div class="cart-item-price">${item.price} ₺</div>
                     </div>
+<<<<<<< HEAD
                     ${controlsHtml}
+=======
+                    <div class="cart-item-controls">
+                        <button class="quantity-btn" onclick="updateQuantity('${tableData.currentPerson}', ${index}, -1)">-</button>
+                        <span class="quantity-display">${item.quantity}</span>
+                        <button class="quantity-btn" onclick="updateQuantity('${tableData.currentPerson}', ${index}, 1)">+</button>
+                    </div>
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 `;
                 
                 itemsElement.appendChild(itemElement);
@@ -2286,6 +2354,7 @@
             const person = tableData.persons[personId];
             if (!person || !person.items[itemIndex]) return;
 
+<<<<<<< HEAD
             const item = person.items[itemIndex];
             
             // Check if item can be edited
@@ -2307,6 +2376,11 @@
             item.quantity += change;
 
             if (item.quantity <= 0) {
+=======
+            person.items[itemIndex].quantity += change;
+
+            if (person.items[itemIndex].quantity <= 0) {
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 person.items.splice(itemIndex, 1);
             }
 
@@ -2367,6 +2441,7 @@
             });
 
             totalElement.textContent = tableTotal.toFixed(2);
+<<<<<<< HEAD
             
             // Update finalize button status
             updateFinalizeButtonStatus();
@@ -2404,6 +2479,8 @@
                 finalizeButton.style.cursor = 'not-allowed';
                 finalizeButton.textContent = 'Yeni Sipariş Yok';
             }
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         }
 
         // Clear entire table
@@ -2417,6 +2494,7 @@
             }
         }
 
+<<<<<<< HEAD
         // Submit order to admin panel
         function submitOrderToAdmin() {
             try {
@@ -2523,6 +2601,10 @@
                 return;
             }
             
+=======
+        // Finalize order
+        function finalizeOrder() {
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             const tableTotal = document.getElementById('tableTotal').textContent;
             
             if (!tableData.selectedTable) {
@@ -2551,9 +2633,12 @@
             orderSummary += `💰 MASA TOPLAMI: ${tableTotal} ₺`;
             
             if (confirm(orderSummary + '\\n\\nSiparişi onaylıyor musunuz?')) {
+<<<<<<< HEAD
                 // Submit order to admin panel
                 submitOrderToAdmin();
                 
+=======
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
                 // Show order confirmation
                 const orderConfirmation = `
                     ✅ SİPARİŞİNİZ ALINDI!
@@ -2567,6 +2652,7 @@
                 
                 alert(orderConfirmation);
                 
+<<<<<<< HEAD
                 // Mark order as submitted and increment order round
                 tableData.orderSubmitted = true;
                 tableData.submittedAt = new Date().toISOString();
@@ -2597,6 +2683,10 @@
                         alert('🎉 Siparişiniz için teşekkürler!\nGarsonunuz siparişlerinizi getirmek için hazırlanıyor.');
                     }
                 }, 1000);
+=======
+                // Keep the order data but show it as submitted
+                // You could add a 'submitted' flag here
+>>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             }
         }
 
