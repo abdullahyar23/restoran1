@@ -2469,53 +2469,38 @@ function markTableCompleted() {
     }
     
     if (confirm(`Masa ${currentTableModal} siparişi tamamlandı olarak işaretlensin mi?\n\n✅ Sipariş tamamlanacak\n🧹 Masa temizlenecek\n📋 Yeni müşteri için hazır hale gelecek`)) {
-        // Her kişi için ayrı ayrı tamamlanan sipariş kaydet (sadece henüz işlenmemişler için)
+        console.log('🏁 Masa tamamlama başlıyor - Masa:', currentTableModal);
+        
+        // HER KİŞİNİN SİPARİŞİNİ İSTATİSTİKLERE KAYDET
         if (table.orders && Object.keys(table.orders).length > 0) {
+            const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+            
             Object.keys(table.orders).forEach(personId => {
                 const person = table.orders[personId];
                 if (person && person.items && person.items.length > 0) {
                     const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                     
-                    // Kişinin ödeme durumunu ve istatistik durumunu kontrol et
-                    const personInPersonsStructure = table.persons && table.persons[person.name];
-                    const alreadyProcessed = personInPersonsStructure && personInPersonsStructure.statisticsProcessed;
+                    // Basit sipariş kaydı oluştur
+                    const orderRecord = {
+                        id: `order_${currentTableModal}_${person.name}_${Date.now()}`,
+                        tableNumber: parseInt(currentTableModal),
+                        customerName: person.name,
+                        items: person.items,
+                        totalAmount: personTotal,
+                        completedAt: new Date().toISOString(),
+                        paymentMethod: 'cash',
+                        source: 'table_completed'
+                    };
                     
-                    // Sadece henüz istatistiklere işlenmemiş kişileri ekle
-                    if (!alreadyProcessed) {
-                        const completedOrder = {
-                            id: `${currentTableModal}_${person.name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                            tableNumber: currentTableModal,
-                            customerName: person.name,
-                            items: person.items,
-                            totalAmount: personTotal,
-                            paymentMethod: 'cash', // Default olarak nakit
-                            completedAt: new Date().toISOString(),
-                            paidAt: new Date().toISOString(),
-                            completedBy: 'admin',
-                            source: 'table_completion' // İstatistik kaynağını belirt
-                        };
-                        
-                        // CompletedOrders listesine ekle
-                        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-                        completedOrders.push(completedOrder);
-                        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-                        
-                        console.log('📊 Masa tamamlama - İstatistikler için sipariş kaydedildi:', completedOrder);
-                    } else {
-                        console.log('📊 Masa tamamlama - Kişi zaten işlenmiş, atlanıyor:', person.name);
-                    }
+                    completedOrders.push(orderRecord);
+                    console.log('📊 İstatistik kaydı eklendi:', orderRecord);
                 }
             });
+            
+            // Kaydet
+            localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+            console.log('💾 Tüm siparişler istatistiklere kaydedildi');
         }
-        
-        // Siparişi tamamlanmış olarak kaydet (eski sistem için - isteğe bağlı)
-        const completedOrder = {
-            tableNumber: currentTableModal,
-            completedAt: new Date().toISOString(),
-            orders: JSON.parse(JSON.stringify(table.orders)), // Deep copy
-            totalAmount: table.totalAmount,
-            completedBy: 'admin'
-        };
         
         // Masayı temizle
         tableSettings.tables[currentTableModal] = {
@@ -2523,8 +2508,7 @@ function markTableCompleted() {
             orders: {},
             isEmpty: true,
             totalAmount: 0,
-            lastUpdate: null,
-            completedOrders: []
+            lastUpdate: new Date().toISOString()
         };
         
         // Müşteri tarafındaki veriyi de temizle
@@ -2541,7 +2525,7 @@ function markTableCompleted() {
         closeTableModal();
         
         // Başarı mesajı
-        alert(`✅ Masa ${currentTableModal} siparişi tamamlandı!\n\n📦 Sipariş geçmişe kaydedildi\n🧹 Masa yeni müşteri için hazır\n💰 Toplam: ${table.totalAmount.toFixed(2)} ₺`);
+        alert(`✅ Masa ${currentTableModal} siparişi tamamlandı!\n\n📦 Sipariş istatistiklere kaydedildi\n🧹 Masa yeni müşteri için hazır`);
     }
 }
 
@@ -2752,17 +2736,7 @@ function cleanupTables3And4() {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         initializeTableSystem();
-        
-        // Otomatik sipariş izleme sistemini başlat
-        console.log('🚀 Otomatik sipariş izleme sistemi başlatılıyor...');
-        
-        // Mevcut siparişleri senkronize et
-        syncExistingOrders();
-        
-        // Otomatik izlemeyi başlat
-        monitorTableChanges();
-        
-        console.log('✅ Otomatik sipariş sistemi aktif');
+        console.log('✅ Masa sistemi başlatıldı');
     }, 500);
 });
 
@@ -3266,6 +3240,8 @@ function processAllPayments() {
     
     if (confirm(confirmMessage)) {
         // Mark all unpaid persons as paid and save to statistics
+        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        
         Object.keys(tableData.persons).forEach(personName => {
             const person = tableData.persons[personName];
             if (person.paymentStatus !== 'paid') {
@@ -3274,19 +3250,26 @@ function processAllPayments() {
                     person.paymentStatus = 'paid';
                     person.paidAt = new Date().toISOString();
                     person.paidAmount = personTotal;
-                    person.statisticsProcessed = true; // Duplikasyon önleyici
                     
-                    // Tamamlanan siparişi istatistikler için merkezi fonksiyonla kaydet
-                    saveOrderToStatistics(
-                        currentTableId,
-                        personName,
-                        person.items || [],
-                        'bulk_payment',
-                        'cash'
-                    );
+                    // SİPARİŞİ İSTATİSTİKLERE KAYDET
+                    const orderRecord = {
+                        id: `bulk_payment_${currentTableId}_${personName}_${Date.now()}`,
+                        tableNumber: parseInt(currentTableId),
+                        customerName: personName,
+                        items: person.items || [],
+                        totalAmount: personTotal,
+                        completedAt: new Date().toISOString(),
+                        paymentMethod: 'cash',
+                        source: 'bulk_payment'
+                    };
+                    
+                    completedOrders.push(orderRecord);
+                    console.log('📊 Toplu ödeme istatistik kaydı:', orderRecord);
                 }
             }
         });
+        
+        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
         
         // Masa tamamen ödendiyse müşteri sepetini temizle
         if (isTableFullyPaid(tableData)) {
@@ -3541,18 +3524,25 @@ function processPersonPayment(personName) {
         tableData.persons[personName].paymentStatus = 'paid';
         tableData.persons[personName].paidAt = new Date().toISOString();
         tableData.persons[personName].paidAmount = personTotal;
-        tableData.persons[personName].statisticsProcessed = true; // Duplikasyon önleyici
         
         console.log('✅ Ödeme kaydedildi:', tableData.persons[personName]);
         
-        // Tamamlanan siparişi istatistikler için merkezi fonksiyonla kaydet
-        saveOrderToStatistics(
-            currentTableId,
-            personName,
-            personData.items || [],
-            'individual_payment',
-            'cash'
-        );
+        // SİPARİŞİ İSTATİSTİKLERE KAYDET
+        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        const orderRecord = {
+            id: `payment_${currentTableId}_${personName}_${Date.now()}`,
+            tableNumber: parseInt(currentTableId),
+            customerName: personName,
+            items: personData.items || [],
+            totalAmount: personTotal,
+            completedAt: new Date().toISOString(),
+            paymentMethod: 'cash',
+            source: 'individual_payment'
+        };
+        
+        completedOrders.push(orderRecord);
+        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+        console.log('📊 Bireysel ödeme istatistik kaydı:', orderRecord);
         
         // Masa tamamen ödendiyse müşteri sepetini temizle
         if (isTableFullyPaid(tableData)) {
@@ -3588,322 +3578,47 @@ function showMessage(message, type = 'info') {
     setTimeout(() => messageDiv.remove(), 3000);
 }
 
-// ==================== AUTOMATIC ORDER TRACKING SYSTEM ====================
+// ==================== SIMPLE STATISTICS SYSTEM ====================
 
-// Otomatik sipariş izleme - Müşteri sipariş verdiğinde çalışır
-function autoTrackNewOrder(tableNumber, customerName, orderItems) {
-    console.log('🔄 OTOMATİK SİPARİŞ KAYDI:', {
-        tableNumber,
-        customerName,
-        itemCount: orderItems.length
-    });
-    
-    if (!orderItems || orderItems.length === 0) {
-        console.log('❌ Boş sipariş, kayıt atlandı');
-        return;
-    }
-    
-    // Siparişi hemen istatistiklere kaydet
-    const savedOrder = saveOrderToStatistics(
-        tableNumber,
-        customerName,
-        orderItems,
-        'customer_order',
-        'pending' // Henüz ödenmeyen sipariş
-    );
-    
-    if (savedOrder) {
-        console.log('✅ Otomatik sipariş kaydı tamamlandı:', savedOrder.id);
-    }
-    
-    return savedOrder;
-}
-
-// Masa güncelleme izleyicisi - masa verileri değiştiğinde çalışır
-function monitorTableChanges() {
-    console.log('👀 Masa değişiklik izleyicisi başlatılıyor...');
-    
-    // localStorage değişikliklerini izle
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'tableSettings') {
-            console.log('📊 TableSettings değişikliği algılandı');
-            detectNewOrders();
-        }
-    });
-    
-    // Periyodik kontrol (her 5 saniyede bir)
-    setInterval(() => {
-        detectNewOrders();
-    }, 5000);
-    
-    console.log('✅ Masa izleyicisi aktif');
-}
-
-// Yeni siparişleri tespit et ve kaydet
-function detectNewOrders() {
-    const currentTables = JSON.parse(localStorage.getItem('tableSettings') || '{}');
-    const lastChecked = localStorage.getItem('lastOrderCheck') || '0';
-    const currentTime = Date.now();
-    
-    if (!currentTables.tables) return;
-    
-    let newOrdersFound = 0;
-    
-    Object.keys(currentTables.tables).forEach(tableNum => {
-        const table = currentTables.tables[tableNum];
-        
-        if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
-            Object.keys(table.orders).forEach(personId => {
-                const person = table.orders[personId];
-                
-                if (person && person.items && person.items.length > 0) {
-                    // Son güncelleme zamanını kontrol et
-                    const lastUpdate = new Date(table.lastUpdate || 0).getTime();
-                    
-                    if (lastUpdate > parseInt(lastChecked)) {
-                        // Bu kişinin siparişi daha önce kaydedilmiş mi kontrol et
-                        const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-                        const alreadyTracked = existingOrders.some(order => 
-                            order.tableNumber == tableNum && 
-                            order.customerName === person.name &&
-                            order.source === 'auto_track'
-                        );
-                        
-                        if (!alreadyTracked) {
-                            console.log(`🆕 Yeni sipariş tespit edildi: Masa ${tableNum} - ${person.name}`);
-                            
-                            // Otomatik kaydet
-                            autoTrackNewOrder(tableNum, person.name, person.items);
-                            newOrdersFound++;
-                        }
-                    }
-                }
-            });
-        }
-    });
-    
-    // Son kontrol zamanını güncelle
-    localStorage.setItem('lastOrderCheck', currentTime.toString());
-    
-    if (newOrdersFound > 0) {
-        console.log(`✅ ${newOrdersFound} yeni sipariş otomatik olarak kaydedildi`);
-    }
-}
-
-// Sistem başlatıldığında mevcut siparişleri kaydet
-function syncExistingOrders() {
-    console.log('🔄 Mevcut siparişler senkronize ediliyor...');
-    
-    const currentTables = JSON.parse(localStorage.getItem('tableSettings') || '{}');
-    const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    
-    if (!currentTables.tables) {
-        console.log('❌ Masa verisi bulunamadı');
-        return 0;
-    }
-    
-    let syncedCount = 0;
-    
-    Object.keys(currentTables.tables).forEach(tableNum => {
-        const table = currentTables.tables[tableNum];
-        
-        if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
-            Object.keys(table.orders).forEach(personId => {
-                const person = table.orders[personId];
-                
-                if (person && person.items && person.items.length > 0) {
-                    // Bu sipariş daha önce kaydedilmiş mi?
-                    const alreadyExists = existingOrders.some(order => 
-                        order.tableNumber == tableNum && 
-                        order.customerName === person.name
-                    );
-                    
-                    if (!alreadyExists) {
-                        console.log(`📝 Mevcut sipariş kaydediliyor: Masa ${tableNum} - ${person.name}`);
-                        
-                        saveOrderToStatistics(
-                            tableNum,
-                            person.name,
-                            person.items,
-                            'sync_existing',
-                            'pending'
-                        );
-                        syncedCount++;
-                    }
-                }
-            });
-        }
-    });
-    
-    console.log(`✅ ${syncedCount} mevcut sipariş senkronize edildi`);
-    return syncedCount;
-}
-
-// ==================== CENTRALIZED ORDER STATISTICS SYSTEM ====================
-
-// Merkezi sipariş kaydetme fonksiyonu - Tüm siparişleri istatistikler için kaydet
-function saveOrderToStatistics(tableNumber, customerName, items, source = 'manual', paymentMethod = 'cash') {
-    console.log('📊 SİPARİŞ İSTATİSTİK KAYDI:', {
-        tableNumber,
-        customerName,
-        itemCount: items.length,
-        source,
-        paymentMethod
-    });
-    
-    if (!items || items.length === 0) {
-        console.log('❌ Sipariş boş, istatistiğe kaydedilmedi');
-        return null;
-    }
-    
-    // Mevcut siparişleri kontrol et - duplikasyon önle
-    const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    
-    // Aynı masa ve müşteri için benzeri sipariş var mı kontrol et
-    const similarOrder = existingOrders.find(order => 
-        order.tableNumber == tableNumber && 
-        order.customerName === customerName &&
-        order.source === source &&
-        Math.abs(Date.now() - new Date(order.completedAt).getTime()) < 60000 // Son 1 dakika içinde
-    );
-    
-    if (similarOrder && source !== 'manual') {
-        console.log('⚠️ Benzer sipariş zaten mevcut, duplikasyon önlendi:', similarOrder.id);
-        return similarOrder;
-    }
-    
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    const completedOrder = {
-        id: `${tableNumber}_${customerName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        tableNumber: tableNumber,
-        customerName: customerName,
-        items: JSON.parse(JSON.stringify(items)), // Deep copy
-        totalAmount: totalAmount,
-        paymentMethod: paymentMethod,
-        completedAt: new Date().toISOString(),
-        paidAt: paymentMethod === 'pending' ? null : new Date().toISOString(),
-        source: source,
-        timestamp: Date.now()
-    };
-    
-    // CompletedOrders listesine ekle
+// Basit istatistik test fonksiyonu
+function testStatisticsData() {
     const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    completedOrders.push(completedOrder);
-    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+    console.log('📊 TOPLAM SİPARİŞ SAYISI:', completedOrders.length);
     
-    console.log('✅ İstatistik kaydı oluşturuldu:', completedOrder.id);
-    console.log('📈 Toplam kayıtlı sipariş sayısı:', completedOrders.length);
-    
-    return completedOrder;
-}
-
-// Masa tüm siparişlerini istatistiklere kaydet
-function saveAllTableOrdersToStatistics(tableNumber, tableData, source = 'bulk_save') {
-    console.log('📊 MASA TÜM SİPARİŞLERİ KAYDETME BAŞLADI:', tableNumber);
-    
-    if (!tableData || !tableData.orders) {
-        console.log('❌ Masa verisi bulunamadı');
-        return 0;
-    }
-    
-    let savedCount = 0;
-    
-    Object.keys(tableData.orders).forEach(personId => {
-        const person = tableData.orders[personId];
-        if (person && person.items && person.items.length > 0) {
-            const savedOrder = saveOrderToStatistics(
-                tableNumber, 
-                person.name, 
-                person.items, 
-                source
-            );
-            if (savedOrder) savedCount++;
-        }
-    });
-    
-    console.log(`✅ Masa ${tableNumber} - ${savedCount} sipariş istatistiklere kaydedildi`);
-    return savedCount;
-}
-
-// Mevcut tüm masa siparişlerini tarayıp istatistiklere kaydet
-function backupAllActiveOrdersToStatistics() {
-    console.log('🔄 TÜM AKTİF SİPARİŞLER İSTATİSTİKLERE YEDEKLENBYOR...');
-    
-    let totalSaved = 0;
-    
-    if (tableSettings && tableSettings.tables) {
-        Object.keys(tableSettings.tables).forEach(tableNum => {
-            const table = tableSettings.tables[tableNum];
-            if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
-                const savedCount = saveAllTableOrdersToStatistics(tableNum, table, 'backup_sync');
-                totalSaved += savedCount;
-            }
-        });
-    }
-    
-    showMessage(`📊 ${totalSaved} aktif sipariş istatistiklere yedeklendi!`, 'success');
-    console.log(`✅ TOPLAM ${totalSaved} aktif sipariş istatistiklere yedeklendi`);
-    return totalSaved;
-}
-
-// Sipariş verilerini debug et
-function showOrdersDebugInfo() {
-    console.log('🔍 SİPARİŞ VERİLERİ DEBUG BAŞLADI');
-    
-    // CompletedOrders kontrolü
-    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    console.log('📊 COMPLETED ORDERS:', completedOrders.length, 'sipariş');
-    
-    // Masa siparişleri kontrolü
-    let activeTables = 0;
-    let activeOrders = 0;
-    
-    if (tableSettings && tableSettings.tables) {
-        Object.keys(tableSettings.tables).forEach(tableNum => {
-            const table = tableSettings.tables[tableNum];
-            if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
-                activeTables++;
-                const orderCount = Object.keys(table.orders).length;
-                activeOrders += orderCount;
-                console.log(`🏠 Masa ${tableNum}: ${orderCount} aktif sipariş`);
-                
-                Object.keys(table.orders).forEach(personId => {
-                    const person = table.orders[personId];
-                    console.log(`  👤 ${person.name}: ${person.items ? person.items.length : 0} ürün`);
-                });
-            }
-        });
-    }
-    
-    // Tarih dağılımı
     if (completedOrders.length > 0) {
-        const dateCount = {};
-        completedOrders.forEach(order => {
-            const date = new Date(order.completedAt).toLocaleDateString('tr-TR');
-            dateCount[date] = (dateCount[date] || 0) + 1;
+        console.log('📋 Son 5 sipariş:');
+        completedOrders.slice(-5).forEach((order, index) => {
+            console.log(`${index + 1}. ${order.customerName} - Masa ${order.tableNumber} - ${order.totalAmount}₺ - ${order.source}`);
         });
-        console.log('📅 Tarih dağılımı:', dateCount);
+        
+        // Tarih dağılımı
+        const today = new Date().toLocaleDateString('tr-TR');
+        const todayOrders = completedOrders.filter(order => 
+            new Date(order.completedAt).toLocaleDateString('tr-TR') === today
+        );
+        console.log(`� Bugünkü siparişler: ${todayOrders.length}`);
+        
+        // Toplam ciro
+        const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        console.log(`💰 Toplam ciro: ${totalRevenue.toFixed(2)}₺`);
     }
     
-    // Özet
-    const summary = `
-📊 SİPARİŞ VERİLERİ ÖZETİ:
-• Tamamlanan siparişler: ${completedOrders.length}
-• Aktif masalar: ${activeTables}
-• Aktif siparişler: ${activeOrders}
-• Toplam veri: ${completedOrders.length + activeOrders}
-    `.trim();
-    
-    console.log(summary);
-    alert(summary);
-    
-    return {
-        completedOrders: completedOrders.length,
-        activeTables,
-        activeOrders,
-        total: completedOrders.length + activeOrders
-    };
+    alert(`📊 İstatistik Özet:\n• Toplam sipariş: ${completedOrders.length}\n• Bugünkü sipariş: ${completedOrders.filter(order => new Date(order.completedAt).toLocaleDateString('tr-TR') === new Date().toLocaleDateString('tr-TR')).length}\n• Toplam ciro: ${completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toFixed(2)}₺`);
+}
+
+// Tüm siparişleri göster
+function showAllOrders() {
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    console.log('📊 TÜM SİPARİŞLER:');
+    completedOrders.forEach((order, index) => {
+        console.log(`${index + 1}. ID: ${order.id}`);
+        console.log(`   Müşteri: ${order.customerName}`);
+        console.log(`   Masa: ${order.tableNumber}`);
+        console.log(`   Tutar: ${order.totalAmount}₺`);
+        console.log(`   Tarih: ${new Date(order.completedAt).toLocaleString('tr-TR')}`);
+        console.log(`   Kaynak: ${order.source}`);
+        console.log('   ---');
+    });
 }
 
 // ==================== STATISTICS SYSTEM ====================
@@ -4642,12 +4357,8 @@ EN ÇOK SATAN ÜRÜNLER:
 window.generateStatistics = generateStatistics;
 window.applyQuickFilter = applyQuickFilter;
 window.exportStatistics = exportStatistics;
-window.showOrdersDebugInfo = showOrdersDebugInfo;
-window.backupAllActiveOrdersToStatistics = backupAllActiveOrdersToStatistics;
-window.saveOrderToStatistics = saveOrderToStatistics;
-window.syncExistingOrders = syncExistingOrders;
-window.detectNewOrders = detectNewOrders;
-window.autoTrackNewOrder = autoTrackNewOrder;
+window.testStatisticsData = testStatisticsData;
+window.showAllOrders = showAllOrders;
 
 // ==================== DUPLICATE PREVENTION SYSTEM ====================
 
