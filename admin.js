@@ -3712,26 +3712,68 @@ function generateStatistics() {
 
 // Get completed orders within date range
 function getFilteredCompletedOrders(startDate, endDate) {
-    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    console.log('📦 Tamamlanan siparişler toplanıyor...');
     
-    return completedOrders.filter(order => {
+    // Global completedOrders listesi
+    const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    console.log(`📋 Global tamamlanan siparişler: ${globalCompletedOrders.length}`);
+    
+    // Masalardaki tamamlanan siparişleri de topla
+    const tableCompletedOrders = [];
+    if (tableSettings && tableSettings.tables) {
+        Object.keys(tableSettings.tables).forEach(tableNum => {
+            const table = tableSettings.tables[tableNum];
+            if (table.completedOrders && Array.isArray(table.completedOrders)) {
+                table.completedOrders.forEach(order => {
+                    // Masa numarasını ekle
+                    const orderWithTable = { ...order, tableNumber: tableNum };
+                    tableCompletedOrders.push(orderWithTable);
+                });
+            }
+        });
+    }
+    console.log(`🏢 Masalardaki tamamlanan siparişler: ${tableCompletedOrders.length}`);
+    
+    // Tüm siparişleri birleştir
+    const allCompletedOrders = [...globalCompletedOrders, ...tableCompletedOrders];
+    console.log(`📊 Toplam tamamlanan sipariş: ${allCompletedOrders.length}`);
+    
+    // Tarih filtresi uygula
+    const filteredOrders = allCompletedOrders.filter(order => {
         if (!order.completedAt) return false;
         
         const orderDate = new Date(order.completedAt);
         return orderDate >= startDate && orderDate <= endDate;
     });
+    
+    console.log(`🗓️ Tarih filtresinden sonra: ${filteredOrders.length} sipariş`);
+    
+    return filteredOrders;
 }
 
 // Generate key metrics cards
 function generateKeyMetrics(orders) {
+    console.log('📊 Anahtar metrikler hesaplanıyor...');
+    console.log(`📦 İşlenecek sipariş sayısı: ${orders.length}`);
+    
     let totalSales = 0;
     let totalOrders = 0;
     const tableOrders = {};
     
-    orders.forEach(order => {
+    orders.forEach((order, index) => {
+        console.log(`📋 Sipariş ${index + 1}:`, {
+            tableNumber: order.tableNumber,
+            customerName: order.customerName,
+            completedAt: order.completedAt,
+            itemCount: order.items ? order.items.length : 0,
+            totalAmount: order.totalAmount
+        });
+        
         if (order.items && Array.isArray(order.items)) {
             order.items.forEach(item => {
-                totalSales += (item.price || 0) * (item.quantity || 0);
+                const itemTotal = (item.price || 0) * (item.quantity || 0);
+                totalSales += itemTotal;
+                console.log(`  📦 Ürün: ${item.name}, Fiyat: ${item.price}₺, Adet: ${item.quantity}, Toplam: ${itemTotal}₺`);
             });
         }
         totalOrders++;
@@ -3759,10 +3801,10 @@ function generateKeyMetrics(orders) {
     document.getElementById('avg-order-value').textContent = avgOrder.toFixed(2) + ' ₺';
     document.getElementById('busiest-table-value').textContent = busiestTable;
     
-    console.log(`💰 Toplam satış: ${totalSales.toFixed(2)} ₺`);
-    console.log(`📋 Toplam sipariş: ${totalOrders}`);
-    console.log(`📊 Ortalama sipariş: ${avgOrder.toFixed(2)} ₺`);
-    console.log(`🏠 En aktif masa: ${busiestTable}`);
+    console.log(`💰 TOPLAM SATIŞ: ${totalSales.toFixed(2)} ₺`);
+    console.log(`📋 TOPLAM SİPARİŞ: ${totalOrders}`);
+    console.log(`📊 ORTALAMA SİPARİŞ: ${avgOrder.toFixed(2)} ₺`);
+    console.log(`🏠 EN AKTİF MASA: ${busiestTable}`);
 }
 
 // Generate top products ranking
