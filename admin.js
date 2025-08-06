@@ -4290,123 +4290,24 @@ window.exportStatistics = exportStatistics;
 
 // ==================== DUPLICATE PREVENTION SYSTEM ====================
 
-// Clean duplicate completed orders (same customer, same table, close timestamps)
+// Clean duplicate completed orders (same customer, same table, close timestamps) - DISABLED
 function cleanDuplicateCompletedOrders() {
-    console.log('🧹 Duplike tamamlanan siparişler temizleniyor...');
+    console.log('🧹 Duplike temizleme DEVRE DIŞI - tüm veriler korunuyor...');
     
     const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    console.log('📦 Toplam kayıt sayısı:', completedOrders.length);
+    console.log('📦 Toplam kayıt sayısı (korunan):', completedOrders.length);
     
-    if (completedOrders.length === 0) {
-        console.log('✅ Temizlenecek kayıt bulunamadı');
-        return 0;
-    }
+    // Hiçbir temizleme yapmıyoruz - tüm verileri koruyoruz
+    console.log('✅ Tüm siparişler korundu - duplike temizleme yapılmadı');
     
-    // Group orders by customer, table, and date
-    const groupedOrders = {};
-    
-    completedOrders.forEach((order, index) => {
-        const orderDate = new Date(order.completedAt);
-        const dateKey = orderDate.toDateString(); // Same day grouping
-        const key = `${order.tableNumber}_${order.customerName}_${dateKey}`;
-        
-        if (!groupedOrders[key]) {
-            groupedOrders[key] = [];
-        }
-        groupedOrders[key].push({ ...order, originalIndex: index });
-    });
-    
-    let duplicatesRemoved = 0;
-    const finalOrders = [];
-    
-    // Process each group
-    Object.keys(groupedOrders).forEach(key => {
-        const orders = groupedOrders[key];
-        
-        if (orders.length === 1) {
-            // Single order, keep it
-            finalOrders.push(orders[0]);
-        } else {
-            // Multiple orders for same customer, table and day
-            console.log(`🔍 ${key} için ${orders.length} kayıt bulundu (aynı gün içinde)`);
-            
-            // Sort by completion time
-            orders.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
-            
-            // Only remove if timestamps are VERY close (within 1 minute)
-            // This indicates true duplicates, not separate orders
-            const timeGroups = [];
-            
-            orders.forEach(order => {
-                const orderTime = new Date(order.completedAt);
-                let addedToGroup = false;
-                
-                for (let group of timeGroups) {
-                    const groupTime = new Date(group[0].completedAt);
-                    const timeDiff = Math.abs(orderTime - groupTime) / (1000 * 60); // minutes
-                    
-                    // Only consider duplicates if within 1 minute AND same total amount
-                    if (timeDiff <= 1 && Math.abs(order.totalAmount - group[0].totalAmount) < 0.01) {
-                        group.push(order);
-                        addedToGroup = true;
-                        break;
-                    }
-                }
-                
-                if (!addedToGroup) {
-                    timeGroups.push([order]);
-                }
-            });
-            
-            // Keep only one order from each time group (the first one)
-            timeGroups.forEach(group => {
-                if (group.length > 1) {
-                    console.log(`🧹 ${key} - ${group.length} gerçek duplike kayıt (1 dakika içinde, aynı tutar), sadece 1'i korunuyor`);
-                    duplicatesRemoved += group.length - 1;
-                    
-                    // Keep the order with most complete data
-                    const bestOrder = group.reduce((best, current) => {
-                        const bestScore = (best.items?.length || 0) + (best.source ? 1 : 0);
-                        const currentScore = (current.items?.length || 0) + (current.source ? 1 : 0);
-                        return currentScore > bestScore ? current : best;
-                    });
-                    
-                    finalOrders.push(bestOrder);
-                } else {
-                    // Keep separate orders even if same customer/table/day
-                    finalOrders.push(group[0]);
-                }
-            });
-        }
-    });
-    
-    // Remove originalIndex property
-    const cleanedOrders = finalOrders.map(order => {
-        const { originalIndex, ...cleanOrder } = order;
-        return cleanOrder;
-    });
-    
-    // Save cleaned orders
-    localStorage.setItem('completedOrders', JSON.stringify(cleanedOrders));
-    
-    console.log(`✅ Duplike temizleme tamamlandı:`);
-    console.log(`📦 Önceki kayıt sayısı: ${completedOrders.length}`);
-    console.log(`📦 Yeni kayıt sayısı: ${cleanedOrders.length}`);
-    console.log(`🧹 Temizlenen gerçek duplike: ${duplicatesRemoved}`);
-    
-    return duplicatesRemoved;
+    return 0; // Hiç veri temizlenmedi
 }
 
-// Auto-clean duplicates when statistics are generated
+// Auto-clean duplicates when statistics are generated - DISABLED
 function generateStatisticsWithCleanup() {
-    // First clean duplicates
-    const duplicatesRemoved = cleanDuplicateCompletedOrders();
+    console.log('📊 İstatistikler duplike temizleme OLMADAN oluşturuluyor...');
     
-    if (duplicatesRemoved > 0) {
-        console.log(`🧹 ${duplicatesRemoved} duplike kayıt temizlendi, istatistikler yeniden oluşturuluyor...`);
-    }
-    
-    // Then generate statistics
+    // Duplike temizleme devre dışı - direkt istatistik oluştur
     generateStatistics();
 }
 
