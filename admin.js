@@ -6,7 +6,6 @@ let restaurantSettings = {};
 let themeSettings = {};
 let currentEditingCategory = null;
 let currentEditingProduct = null;
-<<<<<<< HEAD
 let notificationInterval = null;
 
 // Notification system for new orders
@@ -190,8 +189,6 @@ function clearAllNotifications() {
     localStorage.removeItem('adminNotifications');
     updateNotificationBadge(0);
 }
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 
 // Image processing functions
 function handleImageUpload(input) {
@@ -369,7 +366,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Update storage indicator every 5 seconds
     setInterval(updateStorageIndicator, 5000);
-<<<<<<< HEAD
     
     // Initialize notification system for new orders
     initializeNotificationSystem();
@@ -378,8 +374,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.querySelector('.tab.active')?.getAttribute('data-tab') === 'tables') {
         setTimeout(initializeTableSystem, 500);
     }
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 });
 
 // Tab functionality
@@ -395,7 +389,6 @@ function initializeTabs() {
             tabs.forEach(t => t.classList.remove('active'));
             panels.forEach(p => p.classList.remove('active'));
             
-<<<<<<< HEAD
             // Add active class to clicked tab and target panel
             tab.classList.add('active');
             document.getElementById(targetPanel).classList.add('active');
@@ -416,11 +409,6 @@ function initializeTabs() {
                     updateNotificationBadge(0);
                 }, 500);
             }
-=======
-            // Add active class to clicked tab and corresponding panel
-            tab.classList.add('active');
-            document.getElementById(targetPanel).classList.add('active');
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         });
     });
 }
@@ -444,13 +432,10 @@ async function loadData() {
             categoryOrder = JSON.parse(localCategoryOrder) || Object.keys(categories);
             restaurantSettings = JSON.parse(localRestaurantSettings) || {};
             themeSettings = JSON.parse(localThemeSettings) || {};
-<<<<<<< HEAD
             
             // Also load table settings
             loadTableSettings();
             
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
             console.log('Loaded data from localStorage');
             return;
         }
@@ -1291,20 +1276,12 @@ function downloadJSON(filename, data) {
 // ==================== TABLE MANAGEMENT SYSTEM ====================
 
 // Global table variables
-<<<<<<< HEAD
 let tableSettings = {}; // Boş başlat, loadTableSettings'den yüklenecek
-=======
-let tableSettings = {
-    tableCount: 10,
-    tables: {}
-};
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 
 let currentTableModal = null;
 
 // Initialize table system
 function initializeTableSystem() {
-<<<<<<< HEAD
     console.log('🏠 Masa sistemi başlatılıyor...');
     
     // Önce masa ayarlarını yükle
@@ -1313,6 +1290,13 @@ function initializeTableSystem() {
     // Eğer hala boşsa default ayarları başlat
     if (!tableSettings.tableCount) {
         initializeDefaultTableSettings();
+    }
+    
+    // UI'yi güncelle
+    const tableCountInput = document.getElementById('table-count');
+    if (tableCountInput) {
+        tableCountInput.value = tableSettings.tableCount;
+        console.log(`🔧 Admin: Input değeri ayarlandı: ${tableSettings.tableCount}`);
     }
     
     // Tamamlanan siparişleri kontrol et
@@ -1325,6 +1309,9 @@ function initializeTableSystem() {
     // Bildirimleri göster
     updateNotificationsDisplay();
     
+    // Boş masalardaki tamamlanan siparişleri otomatik temizle
+    cleanEmptyTablesCompletedOrders();
+    
     // Periyodik güncelleme başlat
     setInterval(() => {
         updateTablesDisplay();
@@ -1332,17 +1319,11 @@ function initializeTableSystem() {
     }, 2000); // Her 2 saniyede bir güncelle
     
     console.log('✅ Masa sistemi hazır');
-=======
-    loadTableSettings();
-    generateTablesGrid();
-    setInterval(updateTablesDisplay, 2000); // Update every 2 seconds
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 }
 
 // Load table settings from localStorage
 function loadTableSettings() {
     const saved = localStorage.getItem('tableSettings');
-<<<<<<< HEAD
     console.log('📋 Admin: Masa ayarları yükleniyor:', saved ? 'Veri var' : 'Veri yok');
     
     if (saved) {
@@ -1368,20 +1349,16 @@ function loadTableSettings() {
     } else {
         console.log('📋 Admin: Veri bulunamadı, varsayılan ayarlar kullanılıyor');
         initializeDefaultTableSettings();
-=======
-    if (saved) {
-        tableSettings = JSON.parse(saved);
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
     }
     
     // Update UI
     const tableCountInput = document.getElementById('table-count');
     if (tableCountInput) {
         tableCountInput.value = tableSettings.tableCount;
+        console.log(`🔧 Admin: Masa sayısı input güncellendi: ${tableSettings.tableCount}`);
     }
 }
 
-<<<<<<< HEAD
 // Initialize default table settings
 function initializeDefaultTableSettings() {
     console.log('🏠 Admin: Varsayılan masa ayarları başlatılıyor...');
@@ -1422,14 +1399,9 @@ function saveTableSettings() {
     } catch (error) {
         console.error('❌ Admin: Masa ayarları kaydedilirken hata:', error);
     }
-=======
-// Save table settings to localStorage
-function saveTableSettings() {
-    localStorage.setItem('tableSettings', JSON.stringify(tableSettings));
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 }
 
-// Update table count
+// Update table count - now auto-applies changes
 function updateTableCount() {
     const tableCountInput = document.getElementById('table-count');
     const newCount = parseInt(tableCountInput.value);
@@ -1440,12 +1412,25 @@ function updateTableCount() {
         return;
     }
     
-    tableSettings.tableCount = newCount;
+    // Değişiklik olup olmadığını kontrol et
+    if (newCount !== tableSettings.tableCount) {
+        // Değişiklik var, hemen uygula
+        console.log(`📝 Admin: Masa sayısı değiştirildi: ${tableSettings.tableCount} → ${newCount}`);
+        
+        // Ayarları hemen uygula
+        applyTableSettingsInternal(newCount);
+        
+        // Kullanıcıya bildir
+        showAlert(`✅ Masa sayısı ${newCount} olarak güncellendi!`, 'success');
+    }
 }
 
-// Apply table settings
-function applyTableSettings() {
-    updateTableCount();
+// Internal function to apply table settings without UI feedback
+function applyTableSettingsInternal(newCount) {
+    const oldCount = tableSettings.tableCount;
+    tableSettings.tableCount = newCount;
+    
+    console.log(`🔄 Admin: Masa sayısı uygulanıyor: ${oldCount} → ${newCount}`);
     
     // Initialize tables object for new count
     const newTables = {};
@@ -1458,7 +1443,8 @@ function applyTableSettings() {
                 orders: {},
                 isEmpty: true,
                 totalAmount: 0,
-                lastUpdate: null
+                lastUpdate: null,
+                completedOrders: []
             };
         }
     }
@@ -1466,6 +1452,31 @@ function applyTableSettings() {
     tableSettings.tables = newTables;
     saveTableSettings();
     generateTablesGrid();
+    
+    console.log(`✅ Admin: ${tableSettings.tableCount} masa ayarları uygulandı`);
+}
+
+// Apply table settings (button handler)
+function applyTableSettings() {
+    const tableCountInput = document.getElementById('table-count');
+    const newCount = parseInt(tableCountInput.value);
+    
+    if (newCount < 1 || newCount > 100) {
+        alert('Masa sayısı 1 ile 100 arasında olmalıdır!');
+        tableCountInput.value = tableSettings.tableCount;
+        return;
+    }
+    
+    // Use internal function
+    applyTableSettingsInternal(newCount);
+    
+    // Update button appearance
+    const applyButton = document.querySelector('button[onclick="applyTableSettings()"]');
+    if (applyButton) {
+        applyButton.style.background = '';
+        applyButton.style.animation = '';
+        applyButton.innerHTML = '✅ Masa Ayarlarını Uygula';
+    }
     
     alert(`✅ ${tableSettings.tableCount} masa başarıyla oluşturuldu!`);
 }
@@ -1477,45 +1488,66 @@ function generateTablesGrid() {
     
     container.innerHTML = '';
     
-<<<<<<< HEAD
+    console.log('🏠 Admin: Masalar güncelleniyor...');
+    console.log('📊 tableSettings:', tableSettings);
+    console.log('📋 Masa sayısı:', tableSettings.tableCount);
+    console.log('🏢 Tanımlı masalar:', Object.keys(tableSettings.tables || {}));
+    
     // tableSettings henüz yüklenmediyse bekle
     if (!tableSettings || !tableSettings.hasOwnProperty('tableCount')) {
         container.innerHTML = '<p style="text-align: center; color: #6c757d; grid-column: 1/-1;">Masa ayarları yükleniyor...</p>';
         return;
     }
     
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
     if (tableSettings.tableCount === 0) {
         container.innerHTML = '<p style="text-align: center; color: #6c757d; grid-column: 1/-1;">Henüz masa tanımlanmamış. Yukarıdan masa sayısını belirleyip "Masa Ayarlarını Uygula" butonuna tıklayın.</p>';
         return;
     }
     
     for (let i = 1; i <= tableSettings.tableCount; i++) {
-        const table = tableSettings.tables[i] || {
-            number: i,
-            orders: {},
-            isEmpty: true,
-            totalAmount: 0,
-            lastUpdate: null
-        };
+        // Masa tanımı yoksa oluştur
+        if (!tableSettings.tables[i]) {
+            console.log(`🔧 Admin: Masa ${i} tanımı eksik, oluşturuluyor...`);
+            tableSettings.tables[i] = {
+                number: i,
+                orders: {},
+                isEmpty: true,
+                totalAmount: 0,
+                lastUpdate: null,
+                completedOrders: []
+            };
+        }
+        
+        const table = tableSettings.tables[i];
+        console.log(`🏠 Masa ${i}:`, table.isEmpty ? 'BOŞ' : 'DOLU', `(${Object.keys(table.orders).length} kişi)`);
         
         const tableCard = createTableCard(table);
         container.appendChild(tableCard);
     }
+    
+    // Eksik masa tanımları oluşturulduysa kaydet
+    saveTableSettings();
 }
 
 // Create table card element
 function createTableCard(table) {
+    // Güvenlik kontrolü
+    if (!table || typeof table.number === 'undefined') {
+        console.error('❌ Admin: Geçersiz masa verisi:', table);
+        return document.createElement('div');
+    }
+    
     const card = document.createElement('div');
     card.className = `table-card ${table.isEmpty ? 'empty' : 'occupied'}`;
-    card.onclick = () => openTableModal(table.number);
+    card.onclick = () => {
+        console.log(`🔘 Admin: Masa ${table.number} kartına tıklandı`);
+        openTableModal(table.number);
+    };
     
     const personCount = Object.keys(table.orders).length;
     const statusText = table.isEmpty ? 'BOŞ' : `${personCount} KİŞİ`;
     const statusClass = table.isEmpty ? 'empty' : 'occupied';
     
-<<<<<<< HEAD
     // Count new orders
     let newOrdersCount = 0;
     if (!table.isEmpty && table.orders) {
@@ -1602,18 +1634,11 @@ function createTableCard(table) {
             ${newOrdersIndicator}
             <div class="table-number">MASA ${table.number}</div>
         </div>
-=======
-    card.innerHTML = `
-        <div class="table-number">MASA ${table.number}</div>
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         <div class="table-status ${statusClass}">${statusText}</div>
         <div class="table-info">
             ${table.isEmpty ? 'Müşteri bekleniyor' : `Toplam: ${table.totalAmount.toFixed(2)} ₺`}
         </div>
-<<<<<<< HEAD
         ${paymentStatusHtml}
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         ${!table.isEmpty ? `
             <div class="order-summary">
                 ${Object.keys(table.orders).slice(0, 3).map(personId => {
@@ -1645,7 +1670,6 @@ function createTableCard(table) {
 
 // Update tables display
 function updateTablesDisplay() {
-<<<<<<< HEAD
     console.log('🔄 Admin: Updating tables display...');
     
     // Reload table settings to get latest admin data (includes submitted orders)
@@ -1681,45 +1705,67 @@ function debugLocalStorage() {
 
 // Global olarak erişilebilir yap
 window.debugLocalStorage = debugLocalStorage;
+window.cleanupTables3And4 = cleanupTables3And4;
+window.forceCleanCompletedOrdersForTables = forceCleanCompletedOrdersForTables;
+window.cleanEmptyTablesCompletedOrders = cleanEmptyTablesCompletedOrders;
+window.clearAllCompletedOrders = clearAllCompletedOrders;
 
-=======
-    // Get fresh table data from customer orders
-    const customerTableData = localStorage.getItem('tableData');
-    if (customerTableData) {
-        const tableData = JSON.parse(customerTableData);
-        
-        // Update table settings based on customer orders
-        if (tableData.selectedTable && tableSettings.tables[tableData.selectedTable]) {
-            const tableNumber = tableData.selectedTable;
-            
-            if (!tableSettings.tables[tableNumber].orders) {
-                tableSettings.tables[tableNumber].orders = {};
+// Tüm masalardaki tamamlanan siparişleri temizle (sadece completed orders)
+function clearAllCompletedOrders() {
+    console.log('🧹 Tüm masalardaki tamamlanan siparişler temizleniyor...');
+    
+    let totalCleaned = 0;
+    let tablesWithCompleted = [];
+    
+    // TableSettings içindeki her masanın completedOrders'ını temizle
+    if (tableSettings.tables) {
+        Object.keys(tableSettings.tables).forEach(tableNum => {
+            if (tableSettings.tables[tableNum].completedOrders && tableSettings.tables[tableNum].completedOrders.length > 0) {
+                totalCleaned += tableSettings.tables[tableNum].completedOrders.length;
+                tablesWithCompleted.push(tableNum);
+                tableSettings.tables[tableNum].completedOrders = [];
             }
-            
-            // Update orders for this table
-            tableSettings.tables[tableNumber].orders = tableData.persons;
-            tableSettings.tables[tableNumber].isEmpty = Object.keys(tableData.persons).length === 0;
-            tableSettings.tables[tableNumber].lastUpdate = new Date().toISOString();
-            
-            // Calculate total
-            const total = Object.values(tableData.persons).reduce((sum, person) => {
-                return sum + person.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
-            }, 0);
-            
-            tableSettings.tables[tableNumber].totalAmount = total;
-        }
-        
-        saveTableSettings();
+        });
     }
     
-    // Regenerate display only if on tables tab
-    const tablesTab = document.querySelector('[data-tab="tables"]');
-    if (tablesTab && tablesTab.classList.contains('active')) {
-        generateTablesGrid();
+    // Global completedOrders'ı da temizle
+    const globalCompleted = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    const globalCount = globalCompleted.length;
+    localStorage.setItem('completedOrders', JSON.stringify([]));
+    
+    // TableData içindeki completedOrders'ı da temizle
+    const tableData = JSON.parse(localStorage.getItem('tableData') || '{}');
+    let tableDataCleaned = 0;
+    if (tableData) {
+        Object.keys(tableData).forEach(tableKey => {
+            if (tableData[tableKey] && tableData[tableKey].completedOrders) {
+                tableDataCleaned += tableData[tableKey].completedOrders.length;
+                tableData[tableKey].completedOrders = [];
+            }
+        });
+        localStorage.setItem('tableData', JSON.stringify(tableData));
     }
+    
+    // Değişiklikleri kaydet
+    saveTableSettings();
+    generateTablesGrid();
+    
+    console.log(`✅ Temizleme tamamlandı:
+    - TableSettings: ${totalCleaned} sipariş (${tablesWithCompleted.length} masa)
+    - Global completedOrders: ${globalCount} sipariş
+    - TableData: ${tableDataCleaned} sipariş`);
+    
+    showAlert(`✅ Tüm tamamlanan siparişler temizlendi! 
+    (${totalCleaned + globalCount + tableDataCleaned} sipariş)`, 'success');
+    
+    return {
+        tableSettings: totalCleaned,
+        global: globalCount,
+        tableData: tableDataCleaned,
+        affectedTables: tablesWithCompleted
+    };
 }
 
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 // Clear all tables
 function clearAllTables() {
     if (confirm('Tüm masaları temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
@@ -1729,9 +1775,13 @@ function clearAllTables() {
                 orders: {},
                 isEmpty: true,
                 totalAmount: 0,
-                lastUpdate: null
+                lastUpdate: null,
+                completedOrders: [] // Tamamlanan siparişleri de temizle
             };
         });
+        
+        // Tüm global completedOrders'ı temizle
+        localStorage.removeItem('completedOrders');
         
         saveTableSettings();
         generateTablesGrid();
@@ -1739,37 +1789,78 @@ function clearAllTables() {
         // Also clear customer table data
         localStorage.removeItem('tableData');
         
-        alert('✅ Tüm masalar temizlendi!');
+        alert('✅ Tüm masalar ve tamamlanan siparişler temizlendi!');
     }
 }
 
 // Open table modal
 function openTableModal(tableNumber) {
-    currentTableModal = tableNumber;
-    const table = tableSettings.tables[tableNumber];
+    console.log(`🔔 Admin: Masa ${tableNumber} modalı açılıyor...`);
+    console.log('📊 Mevcut tableSettings:', tableSettings);
+    console.log('🏢 Mevcut masalar:', Object.keys(tableSettings.tables || {}));
     
-    if (!table) return;
+    currentTableModal = tableNumber;
+    
+    // Ensure table exists, create if missing
+    if (!tableSettings.tables[tableNumber]) {
+        console.log(`🔧 Admin: Masa ${tableNumber} tanımı bulunamadı, yeni tanım oluşturuluyor...`);
+        tableSettings.tables[tableNumber] = {
+            number: tableNumber,
+            orders: {},
+            isEmpty: true,
+            totalAmount: 0,
+            lastUpdate: null,
+            completedOrders: []
+        };
+        saveTableSettings();
+        console.log(`✅ Admin: Masa ${tableNumber} tanımı oluşturuldu`);
+    }
+    
+    const table = tableSettings.tables[tableNumber];
+    console.log(`📋 Masa ${tableNumber} verisi:`, table);
     
     const modal = document.getElementById('table-modal');
     const titleElement = document.getElementById('table-modal-title');
     
+    if (!modal) {
+        console.error('❌ Admin: Modal element bulunamadı!');
+        return;
+    }
+    
+    if (!titleElement) {
+        console.error('❌ Admin: Modal title element bulunamadı!');
+        return;
+    }
+    
     titleElement.textContent = `MASA ${tableNumber} - Sipariş Detayları`;
     
-<<<<<<< HEAD
     // Populate admin product list
     populateAdminProductList();
     
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
+    // Auto-clean completed orders if table is empty but has completed orders
+    if (table.isEmpty && table.completedOrders && table.completedOrders.length > 0) {
+        console.log(`🧹 Boş masa ${tableNumber}'da tamamlanan siparişler bulundu, temizleniyor...`);
+        table.completedOrders = [];
+        
+        // Global completedOrders'dan da temizle
+        const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        const filteredOrders = globalCompletedOrders.filter(order => order.tableNumber != tableNumber);
+        localStorage.setItem('completedOrders', JSON.stringify(filteredOrders));
+        
+        saveTableSettings();
+        console.log(`✅ Masa ${tableNumber}'daki tamamlanan siparişler otomatik temizlendi`);
+    }
+    
     updateTableModalContent(table);
     modal.style.display = 'block';
+    
+    console.log(`✅ Admin: Masa ${tableNumber} modalı açıldı`);
 }
 
 // Close table modal
 function closeTableModal() {
     document.getElementById('table-modal').style.display = 'none';
     currentTableModal = null;
-<<<<<<< HEAD
     
     // Clear admin product form
     document.getElementById('admin-person-select').value = '';
@@ -1908,10 +1999,12 @@ function adminAddProductToTable() {
     
     // Recalculate total amount
     let totalAmount = 0;
-    Object.values(table.orders).forEach(person => {
-        person.items.forEach(item => {
-            totalAmount += item.price * item.quantity;
-        });
+    Object.values(table.orders || {}).forEach(person => {
+        if (person && person.items) {
+            person.items.forEach(item => {
+                totalAmount += item.price * item.quantity;
+            });
+        }
     });
     table.totalAmount = totalAmount;
     
@@ -1954,16 +2047,18 @@ function removeItemFromPerson(personId, itemIndex) {
     }
     
     // Check if table is empty
-    if (Object.keys(table.orders).length === 0) {
+    if (Object.keys(table.orders || {}).length === 0) {
         table.isEmpty = true;
         table.totalAmount = 0;
     } else {
         // Recalculate total amount
         let totalAmount = 0;
-        Object.values(table.orders).forEach(person => {
-            person.items.forEach(item => {
-                totalAmount += item.price * item.quantity;
-            });
+        Object.values(table.orders || {}).forEach(person => {
+            if (person && person.items) {
+                person.items.forEach(item => {
+                    totalAmount += item.price * item.quantity;
+                });
+            }
         });
         table.totalAmount = totalAmount;
     }
@@ -1997,16 +2092,18 @@ function removePersonFromTable(personId) {
     delete table.orders[personId];
     
     // Check if table is empty
-    if (Object.keys(table.orders).length === 0) {
+    if (Object.keys(table.orders || {}).length === 0) {
         table.isEmpty = true;
         table.totalAmount = 0;
     } else {
         // Recalculate total amount
         let totalAmount = 0;
-        Object.values(table.orders).forEach(person => {
-            person.items.forEach(item => {
-                totalAmount += item.price * item.quantity;
-            });
+        Object.values(table.orders || {}).forEach(person => {
+            if (person && person.items) {
+                person.items.forEach(item => {
+                    totalAmount += item.price * item.quantity;
+                });
+            }
         });
         table.totalAmount = totalAmount;
     }
@@ -2022,8 +2119,6 @@ function removePersonFromTable(personId) {
     
     // Show success message
     showAlert(`🗑️ ${person.name} masa ${currentTableModal}'den silindi!`, 'success');
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 }
 
 // Update table modal content
@@ -2033,7 +2128,6 @@ function updateTableModalContent(table) {
     
     personsContainer.innerHTML = '';
     
-<<<<<<< HEAD
     // tableSettings'den ödeme durumlarını al - her iki yapıyı da kontrol et
     const tableData = JSON.parse(localStorage.getItem('tableSettings') || '{}');
     let currentTableData = null;
@@ -2052,69 +2146,14 @@ function updateTableModalContent(table) {
     
     console.log('📋 Current Table Data:', currentTableData);
     
-    // Tamamlanan siparişleri göster - önce masa verisinden kontrol et, yoksa global veriden al
-    let completedOrdersHtml = '';
-    let completedOrdersToShow = [];
+    // Tamamlanan siparişler artık gösterilmiyor - kullanıcı istemedi
     
-    // Önce masa verisinden kontrol et
-    if (currentTableData && currentTableData.completedOrders && currentTableData.completedOrders.length > 0) {
-        completedOrdersToShow = currentTableData.completedOrders;
-    } else {
-        // Global completedOrders'dan bu masa için siparişleri al
-        const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-        completedOrdersToShow = globalCompletedOrders.filter(order => order.tableNumber == currentTableModal);
-    }
-    
-    if (completedOrdersToShow.length > 0) {
-        completedOrdersHtml = '<div style="background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 20px; border: 2px solid #17a2b8;">';
-        completedOrdersHtml += '<h4 style="color: #17a2b8; margin-bottom: 15px;">📦 Tamamlanan Siparişler</h4>';
-        
-        completedOrdersToShow.forEach((order, index) => {
-            const orderTime = new Date(order.completedAt).toLocaleString('tr-TR');
-            let orderTotal = 0;
-            
-            completedOrdersHtml += '<div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid #dee2e6;">';
-            completedOrdersHtml += '<div style="font-weight: bold; color: #17a2b8; margin-bottom: 8px; display: flex; justify-content: space-between;">';
-            completedOrdersHtml += '<span>📋 Sipariş #' + (index + 1) + '</span>';
-            completedOrdersHtml += '<span style="font-size: 12px; color: #6c757d;">' + orderTime + '</span>';
-            completedOrdersHtml += '</div>';
-            
-            Object.values(order.cart).forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                orderTotal += itemTotal;
-                completedOrdersHtml += '<div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px;">';
-                completedOrdersHtml += '<span>' + item.name + ' x' + item.quantity + '</span>';
-                completedOrdersHtml += '<span>' + itemTotal.toFixed(2) + ' ₺</span>';
-                completedOrdersHtml += '</div>';
-            });
-            
-            completedOrdersHtml += '<div style="text-align: right; font-weight: bold; color: #17a2b8; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 5px;">';
-            completedOrdersHtml += 'Toplam: ' + orderTotal.toFixed(2) + ' ₺';
-            completedOrdersHtml += '</div>';
-            completedOrdersHtml += '</div>';
-        });
-        
-        completedOrdersHtml += '</div>';
-    }
-    
-    if (table.isEmpty || !table.orders || Object.keys(table.orders).length === 0) {
-        personsContainer.innerHTML = completedOrdersHtml + '<p style="grid-column: 1/-1; text-align: center; color: #6c757d; padding: 40px;">Bu masa henüz boş. Müşteri siparişi bekleniyor.</p>';
-=======
     if (table.isEmpty || !table.orders || Object.keys(table.orders).length === 0) {
         personsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #6c757d; padding: 40px;">Bu masa henüz boş. Müşteri siparişi bekleniyor.</p>';
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         summaryContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">Sipariş bulunmuyor.</p>';
         return;
     }
     
-<<<<<<< HEAD
-    // Tamamlanan siparişleri container'a ekle
-    if (completedOrdersHtml) {
-        personsContainer.innerHTML = completedOrdersHtml;
-    }
-    
-=======
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
     // Generate person cards
     Object.keys(table.orders).forEach(personId => {
         const person = table.orders[personId];
@@ -2123,7 +2162,6 @@ function updateTableModalContent(table) {
         
         const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         
-<<<<<<< HEAD
         // Ödeme durumunu kontrol et
         const paymentInfo = currentTableData?.persons?.[person.name] || {};
         const paymentStatus = paymentInfo.paymentStatus || 'pending';
@@ -2220,49 +2258,13 @@ function updateTableModalContent(table) {
             paymentStatusHtml +
             '<div class="person-items">' + itemsHtml + '</div>' +
             paymentActionsHtml;
-=======
-        personCard.innerHTML = `
-            <div class="person-header">
-                <div class="person-name">👤 ${person.name}</div>
-                <div class="person-total">${personTotal.toFixed(2)} ₺</div>
-            </div>
-            <div class="person-items">
-                ${person.items.map(item => `
-                    <div class="person-item">
-                        <span>${item.name} x${item.quantity}</span>
-                        <span>${(item.price * item.quantity).toFixed(2)} ₺</span>
-                    </div>
-                `).join('')}
-                ${person.items.length === 0 ? '<p style="color: #6c757d; font-style: italic;">Henüz sipariş verilmemiş</p>' : ''}
-            </div>
-        `;
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
         
         personsContainer.appendChild(personCard);
     });
     
-<<<<<<< HEAD
-    // Eğer mevcut siparişler varsa ancak tamamlanan siparişler de varsa, ayırıcı ekle
-    if (completedOrdersHtml && Object.keys(table.orders).length > 0) {
-        const separator = document.createElement('div');
-        separator.style.cssText = 'margin: 20px 0; border-top: 2px solid #e9ecef; padding-top: 20px;';
-        separator.innerHTML = '<h4 style="color: #28a745; margin-bottom: 15px;">🍽️ Aktif Siparişler</h4>';
-        personsContainer.appendChild(separator);
-    }
-    
     // Generate summary with payment info
     let totalPaid = 0;
     let totalPending = 0;
-    let completedOrdersTotal = 0;
-    
-    // Tamamlanan siparişlerin toplamını hesapla
-    if (currentTableData && currentTableData.completedOrders) {
-        currentTableData.completedOrders.forEach(order => {
-            Object.values(order.cart).forEach(item => {
-                completedOrdersTotal += item.price * item.quantity;
-            });
-        });
-    }
     
     // Mevcut siparişlerin toplamını hesapla
     let activeOrdersTotal = 0;
@@ -2305,14 +2307,9 @@ function updateTableModalContent(table) {
     
     summaryHtml += '<div style="border-top: 1px solid #ddd; margin: 10px 0; padding-top: 10px;">';
     
-    // Tamamlanan siparişlerin özeti
-    if (completedOrdersTotal > 0) {
-        summaryHtml += '<div style="color: #17a2b8; margin-bottom: 3px;">📦 Tamamlanan Siparişler: ' + completedOrdersTotal.toFixed(2) + ' ₺</div>';
-    }
-    
-    // Aktif siparişlerin özeti
+    // Sadece aktif siparişlerin özeti
     if (activeOrdersTotal > 0) {
-        summaryHtml += '<div style="color: #28a745; margin-bottom: 3px;">🍽️ Aktif Siparişler: ' + activeOrdersTotal.toFixed(2) + ' ₺</div>';
+        summaryHtml += '<div style="color: #28a745; margin-bottom: 3px;">🍽️ Toplam Siparişler: ' + activeOrdersTotal.toFixed(2) + ' ₺</div>';
     }
     
     if (totalPaid > 0) {
@@ -2323,15 +2320,15 @@ function updateTableModalContent(table) {
     }
     summaryHtml += '</div>' + partialPaymentsHtml;
     
-    // Genel toplam hesaplama (tamamlanan + aktif siparişler)
-    const grandTotal = completedOrdersTotal + activeOrdersTotal;
+    // Toplam hesaplama (sadece aktif siparişler)
+    const grandTotal = activeOrdersTotal;
     const totalPaidIncludingPartial = totalPaid + totalPartialPaid;
     const finalRemainingAmount = grandTotal - totalPaidIncludingPartial;
     
     summaryHtml += '<div style="border-top: 2px solid #e74c3c; margin-top: 10px; padding-top: 10px; font-weight: bold; color: #e74c3c;">';
-    summaryHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>GENEL TOPLAM:</span><span>' + grandTotal.toFixed(2) + ' ₺</span></div>';
+    summaryHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>TOPLAM:</span><span>' + grandTotal.toFixed(2) + ' ₺</span></div>';
     if (totalPaidIncludingPartial > 0) {
-        summaryHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #28a745;"><span>TOPLAM ÖDENMİŞ:</span><span>' + totalPaidIncludingPartial.toFixed(2) + ' ₺</span></div>';
+        summaryHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #28a745;"><span>ÖDENMİŞ:</span><span>' + totalPaidIncludingPartial.toFixed(2) + ' ₺</span></div>';
     }
     if (finalRemainingAmount > 0) {
         // Kalan borç - büyük ve dikkat çekici
@@ -2407,31 +2404,12 @@ function getCurrentTableData() {
     }
     
     return null;
-=======
-    // Generate summary
-    summaryContainer.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 10px; color: #2c3e50;">📋 Masa Özeti:</div>
-        ${Object.keys(table.orders).map(personId => {
-            const person = table.orders[personId];
-            const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            return `<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>${person.name}: ${person.items.length} ürün</span>
-                <span>${personTotal.toFixed(2)} ₺</span>
-            </div>`;
-        }).join('')}
-        <div style="border-top: 2px solid #e74c3c; margin-top: 10px; padding-top: 10px; font-weight: bold; color: #e74c3c; display: flex; justify-content: space-between;">
-            <span>TOPLAM:</span>
-            <span>${table.totalAmount.toFixed(2)} ₺</span>
-        </div>
-    `;
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
 }
 
 // Clear specific table orders
 function clearTableOrders() {
     if (!currentTableModal) return;
     
-<<<<<<< HEAD
     if (confirm('Masa ' + currentTableModal + ' siparişlerini temizlemek istediğinizden emin misiniz?\n\nBu işlem:\n• Tüm aktif siparişleri\n• Tamamlanan siparişleri\n• Ödeme bilgilerini\n• Kısmi ödemeleri\nsilecektir!')) {
         // Masa verilerini tamamen temizle
         if (tableSettings.tables && tableSettings.tables[currentTableModal]) {
@@ -2470,22 +2448,6 @@ function clearTableOrders() {
         generateTablesGrid();
         
         alert('✅ Masa ' + currentTableModal + ' tamamen temizlendi!\n\n• Tüm siparişler silindi\n• Ödeme bilgileri sıfırlandı\n• Tamamlanan siparişler temizlendi');
-=======
-    if (confirm(`Masa ${currentTableModal} siparişlerini temizlemek istediğinizden emin misiniz?`)) {
-        tableSettings.tables[currentTableModal] = {
-            number: currentTableModal,
-            orders: {},
-            isEmpty: true,
-            totalAmount: 0,
-            lastUpdate: null
-        };
-        
-        saveTableSettings();
-        updateTableModalContent(tableSettings.tables[currentTableModal]);
-        generateTablesGrid();
-        
-        alert('✅ Masa siparişleri temizlendi!');
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
     }
 }
 
@@ -2499,7 +2461,6 @@ function markTableCompleted() {
         return;
     }
     
-<<<<<<< HEAD
     if (confirm(`Masa ${currentTableModal} siparişi tamamlandı olarak işaretlensin mi?\n\n✅ Sipariş tamamlanacak\n🧹 Masa temizlenecek\n📋 Yeni müşteri için hazır hale gelecek`)) {
         // Siparişi tamamlanmış olarak kaydet (isteğe bağlı - sipariş geçmişi için)
         const completedOrder = {
@@ -2580,12 +2541,6 @@ function markNewOrdersAsSeen() {
         showAlert('✅ Yeni siparişler görüldü olarak işaretlendi!', 'success');
     } else {
         showAlert('ℹ️ Bu masada yeni sipariş bulunmuyor.', 'info');
-=======
-    if (confirm(`Masa ${currentTableModal} siparişi tamamlandı olarak işaretlensin mi? Masa temizlenecek.`)) {
-        // Here you could save to order history before clearing
-        clearTableOrders();
-        closeTableModal();
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
     }
 }
 
@@ -2597,14 +2552,159 @@ function clearTable(tableNumber) {
             orders: {},
             isEmpty: true,
             totalAmount: 0,
-            lastUpdate: null
+            lastUpdate: null,
+            completedOrders: [] // Tamamlanan siparişleri de temizle
         };
+        
+        // Global completedOrders'dan bu masa için olan siparişleri de temizle
+        const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        const filteredOrders = globalCompletedOrders.filter(order => order.tableNumber != tableNumber);
+        localStorage.setItem('completedOrders', JSON.stringify(filteredOrders));
         
         saveTableSettings();
         generateTablesGrid();
         
-        alert(`✅ Masa ${tableNumber} temizlendi!`);
+        // Eğer modal açıksa güncelle
+        if (currentTableModal == tableNumber) {
+            updateTableModalContent(tableSettings.tables[tableNumber]);
+        }
+        
+        alert(`✅ Masa ${tableNumber} ve tüm tamamlanan siparişleri temizlendi!`);
     }
+}
+
+// Clean completed orders for specific table
+function cleanCompletedOrdersForTable(tableNumber) {
+    if (confirm(`Masa ${tableNumber}'deki tamamlanan siparişleri temizlemek istediğinizden emin misiniz?`)) {
+        // Masa bazlı tamamlanan siparişleri temizle
+        if (tableSettings.tables[tableNumber]) {
+            tableSettings.tables[tableNumber].completedOrders = [];
+        }
+        
+        // Global completedOrders'dan bu masa için olan siparişleri temizle
+        const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        const filteredOrders = globalCompletedOrders.filter(order => order.tableNumber != tableNumber);
+        localStorage.setItem('completedOrders', JSON.stringify(filteredOrders));
+        
+        saveTableSettings();
+        
+        // Eğer modal açıksa güncelle
+        if (currentTableModal == tableNumber) {
+            updateTableModalContent(tableSettings.tables[tableNumber]);
+        }
+        
+        alert(`✅ Masa ${tableNumber}'deki tamamlanan siparişler temizlendi!`);
+    }
+}
+
+// Force clean all completed orders for specific tables (mass cleanup)
+function forceCleanCompletedOrdersForTables(tableNumbers) {
+    console.log('🧹 Toplu tamamlanan sipariş temizleme başlatılıyor...', tableNumbers);
+    
+    let totalCleaned = 0;
+    
+    tableNumbers.forEach(tableNumber => {
+        // Masa bazlı tamamlanan siparişleri temizle
+        if (tableSettings.tables[tableNumber]) {
+            if (tableSettings.tables[tableNumber].completedOrders) {
+                totalCleaned += tableSettings.tables[tableNumber].completedOrders.length;
+                tableSettings.tables[tableNumber].completedOrders = [];
+            }
+        }
+        
+        console.log(`🧹 Masa ${tableNumber} completedOrders temizlendi`);
+    });
+    
+    // Global completedOrders'dan belirtilen masalar için olan siparişleri temizle
+    const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    const beforeCount = globalCompletedOrders.length;
+    const filteredOrders = globalCompletedOrders.filter(order => !tableNumbers.includes(parseInt(order.tableNumber)));
+    const afterCount = filteredOrders.length;
+    const globalCleaned = beforeCount - afterCount;
+    
+    localStorage.setItem('completedOrders', JSON.stringify(filteredOrders));
+    totalCleaned += globalCleaned;
+    
+    console.log(`🧹 Global completedOrders: ${beforeCount} → ${afterCount} (${globalCleaned} temizlendi)`);
+    
+    // Değişiklikleri kaydet
+    saveTableSettings();
+    
+    // Eğer modal açıksa güncelle
+    if (currentTableModal && tableNumbers.includes(parseInt(currentTableModal))) {
+        updateTableModalContent(tableSettings.tables[currentTableModal]);
+    }
+    
+    // Masaları güncelle
+    generateTablesGrid();
+    
+    console.log(`✅ Toplam ${totalCleaned} tamamlanan sipariş temizlendi`);
+    
+    return totalCleaned;
+}
+
+// Clean completed orders from empty tables automatically
+function cleanEmptyTablesCompletedOrders() {
+    console.log('🧹 Boş masalardaki tamamlanan siparişler kontrol ediliyor...');
+    
+    let totalCleaned = 0;
+    const emptyTablesWithCompletedOrders = [];
+    
+    // Tüm masaları kontrol et
+    if (tableSettings.tables) {
+        Object.keys(tableSettings.tables).forEach(tableNum => {
+            const table = tableSettings.tables[tableNum];
+            const isEmpty = table.isEmpty || !table.orders || Object.keys(table.orders).length === 0;
+            
+            if (isEmpty && table.completedOrders && table.completedOrders.length > 0) {
+                console.log(`🧹 Boş masa ${tableNum}'da ${table.completedOrders.length} tamamlanan sipariş bulundu`);
+                emptyTablesWithCompletedOrders.push(parseInt(tableNum));
+                totalCleaned += table.completedOrders.length;
+                table.completedOrders = [];
+            }
+        });
+    }
+    
+    // Global completedOrders'dan boş masalar için olan siparişleri temizle
+    const globalCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    const beforeCount = globalCompletedOrders.length;
+    
+    const filteredOrders = globalCompletedOrders.filter(order => {
+        const tableNumber = parseInt(order.tableNumber);
+        const table = tableSettings.tables[tableNumber];
+        
+        if (table) {
+            const isEmpty = table.isEmpty || !table.orders || Object.keys(table.orders).length === 0;
+            return !isEmpty; // Sadece dolu masaların siparişlerini koru
+        }
+        
+        return true; // Masa bulunamazsa siparişi koru
+    });
+    
+    const afterCount = filteredOrders.length;
+    const globalCleaned = beforeCount - afterCount;
+    totalCleaned += globalCleaned;
+    
+    if (globalCleaned > 0) {
+        localStorage.setItem('completedOrders', JSON.stringify(filteredOrders));
+        console.log(`🧹 Global completedOrders: ${beforeCount} → ${afterCount} (${globalCleaned} temizlendi)`);
+    }
+    
+    if (totalCleaned > 0) {
+        saveTableSettings();
+        console.log(`✅ Toplam ${totalCleaned} tamamlanan sipariş boş masalardan temizlendi`);
+        console.log(`📋 Temizlenen masalar: ${emptyTablesWithCompletedOrders.join(', ')}`);
+    } else {
+        console.log('✅ Boş masalarda tamamlanan sipariş bulunamadı');
+    }
+    
+    return totalCleaned;
+}
+
+// Immediate cleanup for table 3 and 4
+function cleanupTables3And4() {
+    const cleaned = forceCleanCompletedOrdersForTables([3, 4]);
+    alert(`✅ Masa 3 ve Masa 4'teki ${cleaned} tamamlanan sipariş temizlendi!`);
 }
 
 // Initialize table system when page loads
@@ -2615,7 +2715,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Close table modal when clicking outside
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('table-modal');
-<<<<<<< HEAD
     const transferModal = document.getElementById('table-transfer-modal');
     if (event.target === modal) {
         closeTableModal();
@@ -2815,8 +2914,11 @@ function executeTableTransfer() {
         });
         
         // Calculate new total
-        const newTotal = Object.values(newTargetOrders).reduce((sum, person) => {
-            return sum + person.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+        const newTotal = Object.values(newTargetOrders || {}).reduce((sum, person) => {
+            if (person && person.items) {
+                return sum + person.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+            }
+            return sum;
         }, 0);
         
         // Update target table
@@ -3034,8 +3136,8 @@ function isTableFullyPaid(tableData) {
     
     // Orders yapısından toplam tutarı hesapla
     if (tableData.orders) {
-        Object.values(tableData.orders).forEach(person => {
-            if (person.items) {
+        Object.values(tableData.orders || {}).forEach(person => {
+            if (person && person.items) {
                 const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 totalAmount += personTotal;
             }
@@ -3044,8 +3146,8 @@ function isTableFullyPaid(tableData) {
     
     // Persons yapısından ödenen tutarı hesapla
     if (tableData.persons) {
-        Object.values(tableData.persons).forEach(person => {
-            if (person.paymentStatus === 'paid' && person.paidAmount) {
+        Object.values(tableData.persons || {}).forEach(person => {
+            if (person && person.paymentStatus === 'paid' && person.paidAmount) {
                 paidAmount += person.paidAmount;
             }
         });
@@ -3411,9 +3513,3 @@ function showMessage(message, type = 'info') {
     
     setTimeout(() => messageDiv.remove(), 3000);
 }
-=======
-    if (event.target === modal) {
-        closeTableModal();
-    }
-});
->>>>>>> a6e047dcb4c3e972d289b2af3317d134ebbd8b81
