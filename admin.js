@@ -409,6 +409,13 @@ function initializeTabs() {
                     updateNotificationBadge(0);
                 }, 500);
             }
+            
+            // Initialize statistics when statistics tab is activated
+            if (targetPanel === 'statistics') {
+                setTimeout(() => {
+                    initializeStatistics();
+                }, 100);
+            }
         });
     });
 }
@@ -2462,7 +2469,36 @@ function markTableCompleted() {
     }
     
     if (confirm(`Masa ${currentTableModal} siparişi tamamlandı olarak işaretlensin mi?\n\n✅ Sipariş tamamlanacak\n🧹 Masa temizlenecek\n📋 Yeni müşteri için hazır hale gelecek`)) {
-        // Siparişi tamamlanmış olarak kaydet (isteğe bağlı - sipariş geçmişi için)
+        // Her kişi için ayrı ayrı tamamlanan sipariş kaydet (istatistikler için)
+        if (table.orders && Object.keys(table.orders).length > 0) {
+            Object.keys(table.orders).forEach(personId => {
+                const person = table.orders[personId];
+                if (person && person.items && person.items.length > 0) {
+                    const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    
+                    const completedOrder = {
+                        id: `${currentTableModal}_${person.name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                        tableNumber: currentTableModal,
+                        customerName: person.name,
+                        items: person.items,
+                        totalAmount: personTotal,
+                        paymentMethod: 'cash', // Default olarak nakit
+                        completedAt: new Date().toISOString(),
+                        paidAt: new Date().toISOString(),
+                        completedBy: 'admin'
+                    };
+                    
+                    // CompletedOrders listesine ekle
+                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                    completedOrders.push(completedOrder);
+                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+                    
+                    console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+                }
+            });
+        }
+        
+        // Siparişi tamamlanmış olarak kaydet (eski sistem için - isteğe bağlı)
         const completedOrder = {
             tableNumber: currentTableModal,
             completedAt: new Date().toISOString(),
@@ -2470,11 +2506,6 @@ function markTableCompleted() {
             totalAmount: table.totalAmount,
             completedBy: 'admin'
         };
-        
-        // Tamamlanan siparişleri kaydet
-        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-        completedOrders.push(completedOrder);
-        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
         
         // Masayı temizle
         tableSettings.tables[currentTableModal] = {
@@ -3211,7 +3242,7 @@ function processAllPayments() {
     confirmMessage += `\nToplam ${totalUnpaid.toFixed(2)} ₺ tutarını tahsil ettiniz mi?`;
     
     if (confirm(confirmMessage)) {
-        // Mark all unpaid persons as paid
+        // Mark all unpaid persons as paid and save to statistics
         Object.keys(tableData.persons).forEach(personName => {
             const person = tableData.persons[personName];
             if (person.paymentStatus !== 'paid') {
@@ -3220,6 +3251,25 @@ function processAllPayments() {
                     person.paymentStatus = 'paid';
                     person.paidAt = new Date().toISOString();
                     person.paidAmount = personTotal;
+                    
+                    // Tamamlanan siparişi istatistikler için kaydet
+                    const completedOrder = {
+                        id: `${currentTableId}_${personName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                        tableNumber: currentTableId,
+                        customerName: personName,
+                        items: person.items || [],
+                        totalAmount: personTotal,
+                        paymentMethod: 'cash', // Default olarak nakit
+                        completedAt: new Date().toISOString(),
+                        paidAt: new Date().toISOString()
+                    };
+                    
+                    // CompletedOrders listesine ekle
+                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                    completedOrders.push(completedOrder);
+                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+                    
+                    console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
                 }
             }
         });
@@ -3480,6 +3530,25 @@ function processPersonPayment(personName) {
         
         console.log('✅ Ödeme kaydedildi:', tableData.persons[personName]);
         
+        // Tamamlanan siparişi istatistikler için kaydet
+        const completedOrder = {
+            id: `${currentTableId}_${personName}_${Date.now()}`,
+            tableNumber: currentTableId,
+            customerName: personName,
+            items: personData.items || [],
+            totalAmount: personTotal,
+            paymentMethod: 'cash', // Default olarak nakit, gerekirse güncellenebilir
+            completedAt: new Date().toISOString(),
+            paidAt: new Date().toISOString()
+        };
+        
+        // CompletedOrders listesine ekle
+        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+        completedOrders.push(completedOrder);
+        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+        
+        console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+        
         // Masa tamamen ödendiyse müşteri sepetini temizle
         if (isTableFullyPaid(tableData)) {
             clearCustomerCartIfFullyPaid(currentTableId);
@@ -3513,3 +3582,630 @@ function showMessage(message, type = 'info') {
     
     setTimeout(() => messageDiv.remove(), 3000);
 }
+
+// ==================== STATISTICS SYSTEM ====================
+
+// Initialize statistics when page loads
+function initializeStatistics() {
+    console.log('📊 İstatistik sistemi başlatılıyor...');
+    
+    // Set default date range (today)
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    document.getElementById('stats-start-date').value = todayStr;
+    document.getElementById('stats-end-date').value = todayStr;
+    
+    // Generate initial statistics
+    generateStatistics();
+}
+
+// Apply quick filter to date range
+function applyQuickFilter() {
+    const filter = document.getElementById('stats-quick-filter').value;
+    const today = new Date();
+    const startDateInput = document.getElementById('stats-start-date');
+    const endDateInput = document.getElementById('stats-end-date');
+    
+    let startDate = new Date();
+    let endDate = new Date();
+    
+    switch (filter) {
+        case 'today':
+            // Bugün
+            startDate = new Date(today);
+            endDate = new Date(today);
+            break;
+            
+        case 'yesterday':
+            // Dün
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 1);
+            endDate = new Date(startDate);
+            break;
+            
+        case 'week':
+            // Bu hafta (Pazartesi'den başlayarak)
+            const dayOfWeek = today.getDay();
+            const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Pazar = 0
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - daysFromMonday);
+            endDate = new Date(today);
+            break;
+            
+        case 'month':
+            // Bu ay
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today);
+            break;
+            
+        case 'all':
+            // Tüm zamanlar - en eski veriyi bul
+            const allCompletedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+            if (allCompletedOrders.length > 0) {
+                const oldestOrder = allCompletedOrders.reduce((oldest, order) => {
+                    const orderDate = new Date(order.completedAt);
+                    return orderDate < oldest ? orderDate : oldest;
+                }, new Date());
+                startDate = new Date(oldestOrder);
+            } else {
+                startDate = new Date(today);
+                startDate.setMonth(today.getMonth() - 1); // Son 1 ay
+            }
+            endDate = new Date(today);
+            break;
+    }
+    
+    startDateInput.value = startDate.toISOString().split('T')[0];
+    endDateInput.value = endDate.toISOString().split('T')[0];
+    
+    // Auto-generate statistics
+    generateStatistics();
+}
+
+// Main statistics generation function
+function generateStatistics() {
+    console.log('📊 İstatistikler oluşturuluyor...');
+    
+    const startDate = document.getElementById('stats-start-date').value;
+    const endDate = document.getElementById('stats-end-date').value;
+    
+    if (!startDate || !endDate) {
+        alert('Lütfen başlangıç ve bitiş tarihlerini seçin!');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate + 'T23:59:59'); // End of day
+    
+    console.log(`📅 Tarih aralığı: ${start.toLocaleDateString('tr-TR')} - ${end.toLocaleDateString('tr-TR')}`);
+    
+    // Get filtered completed orders
+    const filteredOrders = getFilteredCompletedOrders(start, end);
+    console.log(`📦 Filtrelenmiş sipariş sayısı: ${filteredOrders.length}`);
+    
+    // Generate all statistics
+    generateKeyMetrics(filteredOrders);
+    generateTopProducts(filteredOrders);
+    generateCategoryPerformance(filteredOrders);
+    generateTimeAnalysis(filteredOrders);
+    generatePaymentAnalysis(filteredOrders);
+    generateTablePerformance(filteredOrders);
+    generateSalesChart(filteredOrders, start, end);
+    
+    console.log('✅ İstatistikler güncellendi');
+}
+
+// Get completed orders within date range
+function getFilteredCompletedOrders(startDate, endDate) {
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    
+    return completedOrders.filter(order => {
+        if (!order.completedAt) return false;
+        
+        const orderDate = new Date(order.completedAt);
+        return orderDate >= startDate && orderDate <= endDate;
+    });
+}
+
+// Generate key metrics cards
+function generateKeyMetrics(orders) {
+    let totalSales = 0;
+    let totalOrders = 0;
+    const tableOrders = {};
+    
+    orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                totalSales += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+        totalOrders++;
+        
+        // Count orders per table
+        const tableNum = order.tableNumber || 'Bilinmeyen';
+        tableOrders[tableNum] = (tableOrders[tableNum] || 0) + 1;
+    });
+    
+    const avgOrder = totalOrders > 0 ? totalSales / totalOrders : 0;
+    
+    // Find busiest table
+    let busiestTable = '-';
+    let maxOrders = 0;
+    Object.keys(tableOrders).forEach(table => {
+        if (tableOrders[table] > maxOrders) {
+            maxOrders = tableOrders[table];
+            busiestTable = `Masa ${table} (${maxOrders} sipariş)`;
+        }
+    });
+    
+    // Update UI
+    document.getElementById('total-sales-value').textContent = totalSales.toFixed(2) + ' ₺';
+    document.getElementById('order-count-value').textContent = totalOrders.toLocaleString('tr-TR');
+    document.getElementById('avg-order-value').textContent = avgOrder.toFixed(2) + ' ₺';
+    document.getElementById('busiest-table-value').textContent = busiestTable;
+    
+    console.log(`💰 Toplam satış: ${totalSales.toFixed(2)} ₺`);
+    console.log(`📋 Toplam sipariş: ${totalOrders}`);
+    console.log(`📊 Ortalama sipariş: ${avgOrder.toFixed(2)} ₺`);
+    console.log(`🏠 En aktif masa: ${busiestTable}`);
+}
+
+// Generate top products ranking
+function generateTopProducts(orders) {
+    const productStats = {};
+    
+    orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                const productId = item.id || item.name;
+                if (!productStats[productId]) {
+                    productStats[productId] = {
+                        name: item.name || 'Bilinmeyen Ürün',
+                        quantity: 0,
+                        revenue: 0,
+                        price: item.price || 0
+                    };
+                }
+                
+                productStats[productId].quantity += item.quantity || 0;
+                productStats[productId].revenue += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+    });
+    
+    // Sort by revenue
+    const topProducts = Object.values(productStats)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10); // Top 10
+    
+    const container = document.getElementById('top-products-list');
+    if (topProducts.length === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında satış bulunamadı.</div>';
+        return;
+    }
+    
+    container.innerHTML = topProducts.map((product, index) => `
+        <div class="product-rank-item">
+            <div class="product-rank">${index + 1}</div>
+            <div class="product-info">
+                <div class="product-name">${product.name}</div>
+                <div class="product-details">Birim fiyat: ${product.price.toFixed(2)} ₺</div>
+            </div>
+            <div class="product-stats">
+                <div class="product-revenue">${product.revenue.toFixed(2)} ₺</div>
+                <div class="product-quantity">${product.quantity} adet</div>
+            </div>
+        </div>
+    `).join('');
+    
+    console.log(`🏆 En çok satan ürün: ${topProducts[0]?.name} (${topProducts[0]?.revenue.toFixed(2)} ₺)`);
+}
+
+// Generate category performance analysis
+function generateCategoryPerformance(orders) {
+    const categoryStats = {};
+    let totalRevenue = 0;
+    
+    orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                // Find product category
+                const product = menuItems.find(p => p.id == item.id || p.name === item.name);
+                const categoryId = product?.category || 'unknown';
+                const categoryName = categories[categoryId] || 'Diğer';
+                
+                if (!categoryStats[categoryName]) {
+                    categoryStats[categoryName] = {
+                        revenue: 0,
+                        quantity: 0
+                    };
+                }
+                
+                const revenue = (item.price || 0) * (item.quantity || 0);
+                categoryStats[categoryName].revenue += revenue;
+                categoryStats[categoryName].quantity += item.quantity || 0;
+                totalRevenue += revenue;
+            });
+        }
+    });
+    
+    const container = document.getElementById('category-performance');
+    if (totalRevenue === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında kategori verisi bulunamadı.</div>';
+        return;
+    }
+    
+    const sortedCategories = Object.entries(categoryStats)
+        .sort(([,a], [,b]) => b.revenue - a.revenue);
+    
+    container.innerHTML = sortedCategories.map(([categoryName, stats]) => {
+        const percentage = (stats.revenue / totalRevenue) * 100;
+        return `
+            <div class="performance-item">
+                <div>
+                    <div style="font-weight: bold; color: #2c3e50;">${categoryName}</div>
+                    <div style="font-size: 12px; color: #6c757d;">${stats.quantity} ürün</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; color: #27ae60;">${stats.revenue.toFixed(2)} ₺</div>
+                    <div style="font-size: 12px; color: #6c757d;">%${percentage.toFixed(1)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Generate time-based analysis
+function generateTimeAnalysis(orders) {
+    const hourlyStats = {};
+    
+    // Initialize all hours
+    for (let i = 0; i < 24; i++) {
+        hourlyStats[i] = { revenue: 0, orders: 0 };
+    }
+    
+    orders.forEach(order => {
+        if (order.completedAt) {
+            const hour = new Date(order.completedAt).getHours();
+            let orderRevenue = 0;
+            
+            if (order.items && Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    orderRevenue += (item.price || 0) * (item.quantity || 0);
+                });
+            }
+            
+            hourlyStats[hour].revenue += orderRevenue;
+            hourlyStats[hour].orders += 1;
+        }
+    });
+    
+    // Find peak hours
+    const peakHours = Object.entries(hourlyStats)
+        .filter(([hour, stats]) => stats.revenue > 0)
+        .sort(([,a], [,b]) => b.revenue - a.revenue)
+        .slice(0, 6);
+    
+    const container = document.getElementById('time-analysis');
+    if (peakHours.length === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında saat bazlı veri bulunamadı.</div>';
+        return;
+    }
+    
+    container.innerHTML = peakHours.map(([hour, stats]) => {
+        const timeRange = `${hour.padStart(2, '0')}:00 - ${(parseInt(hour) + 1).toString().padStart(2, '0')}:00`;
+        return `
+            <div class="time-slot">
+                <div class="time-label">${timeRange}</div>
+                <div class="time-value">${stats.revenue.toFixed(2)} ₺ (${stats.orders} sipariş)</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Generate payment methods analysis
+function generatePaymentAnalysis(orders) {
+    const paymentStats = {
+        cash: { count: 0, amount: 0, label: 'Nakit' },
+        card: { count: 0, amount: 0, label: 'Kart' },
+        partial: { count: 0, amount: 0, label: 'Kısmi Ödeme' },
+        unknown: { count: 0, amount: 0, label: 'Bilinmeyen' }
+    };
+    
+    orders.forEach(order => {
+        let orderTotal = 0;
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                orderTotal += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+        
+        const paymentMethod = order.paymentMethod || 'unknown';
+        if (paymentStats[paymentMethod]) {
+            paymentStats[paymentMethod].count++;
+            paymentStats[paymentMethod].amount += orderTotal;
+        } else {
+            paymentStats.unknown.count++;
+            paymentStats.unknown.amount += orderTotal;
+        }
+    });
+    
+    const container = document.getElementById('payment-methods');
+    const totalAmount = Object.values(paymentStats).reduce((sum, stats) => sum + stats.amount, 0);
+    
+    if (totalAmount === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında ödeme verisi bulunamadı.</div>';
+        return;
+    }
+    
+    container.innerHTML = Object.values(paymentStats)
+        .filter(stats => stats.count > 0)
+        .map(stats => {
+            const percentage = (stats.amount / totalAmount) * 100;
+            return `
+                <div class="performance-item">
+                    <div>
+                        <div style="font-weight: bold; color: #2c3e50;">${stats.label}</div>
+                        <div style="font-size: 12px; color: #6c757d;">${stats.count} işlem</div>
+                        <div class="performance-bar">
+                            <div class="performance-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; color: #27ae60;">${stats.amount.toFixed(2)} ₺</div>
+                        <div style="font-size: 12px; color: #6c757d;">%${percentage.toFixed(1)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+}
+
+// Generate table performance analysis
+function generateTablePerformance(orders) {
+    const tableStats = {};
+    
+    orders.forEach(order => {
+        const tableNum = order.tableNumber || 'Bilinmeyen';
+        if (!tableStats[tableNum]) {
+            tableStats[tableNum] = { revenue: 0, orders: 0 };
+        }
+        
+        let orderRevenue = 0;
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                orderRevenue += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+        
+        tableStats[tableNum].revenue += orderRevenue;
+        tableStats[tableNum].orders += 1;
+    });
+    
+    const container = document.getElementById('table-performance');
+    const totalRevenue = Object.values(tableStats).reduce((sum, stats) => sum + stats.revenue, 0);
+    
+    if (totalRevenue === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında masa verisi bulunamadı.</div>';
+        return;
+    }
+    
+    const sortedTables = Object.entries(tableStats)
+        .sort(([,a], [,b]) => b.revenue - a.revenue)
+        .slice(0, 10); // Top 10 tables
+    
+    container.innerHTML = sortedTables.map(([tableNum, stats]) => {
+        const percentage = (stats.revenue / totalRevenue) * 100;
+        const avgPerOrder = stats.orders > 0 ? stats.revenue / stats.orders : 0;
+        return `
+            <div class="performance-item">
+                <div>
+                    <div style="font-weight: bold; color: #2c3e50;">Masa ${tableNum}</div>
+                    <div style="font-size: 12px; color: #6c757d;">${stats.orders} sipariş - Ort: ${avgPerOrder.toFixed(2)} ₺</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; color: #27ae60;">${stats.revenue.toFixed(2)} ₺</div>
+                    <div style="font-size: 12px; color: #6c757d;">%${percentage.toFixed(1)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Generate sales chart (simple text-based for now)
+function generateSalesChart(orders, startDate, endDate) {
+    const container = document.getElementById('sales-chart');
+    
+    if (orders.length === 0) {
+        container.innerHTML = '<div class="loading">Bu tarih aralığında satış verisi bulunamadı.</div>';
+        return;
+    }
+    
+    // Group orders by date
+    const dailySales = {};
+    const currentDate = new Date(startDate);
+    
+    // Initialize all dates in range
+    while (currentDate <= endDate) {
+        const dateKey = currentDate.toISOString().split('T')[0];
+        dailySales[dateKey] = 0;
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Calculate daily sales
+    orders.forEach(order => {
+        const orderDate = new Date(order.completedAt).toISOString().split('T')[0];
+        let orderRevenue = 0;
+        
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                orderRevenue += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+        
+        if (dailySales.hasOwnProperty(orderDate)) {
+            dailySales[orderDate] += orderRevenue;
+        }
+    });
+    
+    // Create simple chart visualization
+    const maxSales = Math.max(...Object.values(dailySales));
+    const chartHtml = Object.entries(dailySales).map(([date, sales]) => {
+        const percentage = maxSales > 0 ? (sales / maxSales) * 100 : 0;
+        const displayDate = new Date(date).toLocaleDateString('tr-TR', { 
+            day: 'numeric', 
+            month: 'short' 
+        });
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="width: 60px; font-size: 12px; color: #6c757d;">${displayDate}</div>
+                <div style="flex: 1; margin: 0 10px;">
+                    <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #e74c3c, #f39c12); height: 100%; width: ${percentage}%; transition: width 0.5s ease; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                <div style="width: 80px; text-align: right; font-weight: bold; color: #27ae60; font-size: 14px;">
+                    ${sales.toFixed(0)} ₺
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `
+        <div style="padding: 20px;">
+            <div style="text-align: center; margin-bottom: 20px; color: #2c3e50; font-weight: bold;">
+                Günlük Satış Trendi
+            </div>
+            ${chartHtml}
+            <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #6c757d;">
+                Maksimum günlük satış: ${maxSales.toFixed(2)} ₺
+            </div>
+        </div>
+    `;
+}
+
+// Export statistics to different formats
+function exportStatistics(format) {
+    const startDate = document.getElementById('stats-start-date').value;
+    const endDate = document.getElementById('stats-end-date').value;
+    
+    if (!startDate || !endDate) {
+        alert('Lütfen tarih aralığını seçin!');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate + 'T23:59:59');
+    const filteredOrders = getFilteredCompletedOrders(start, end);
+    
+    if (filteredOrders.length === 0) {
+        alert('Bu tarih aralığında veri bulunamadı!');
+        return;
+    }
+    
+    switch (format) {
+        case 'excel':
+        case 'csv':
+            exportToCSV(filteredOrders, startDate, endDate);
+            break;
+        case 'pdf':
+            exportToPDF(filteredOrders, startDate, endDate);
+            break;
+        default:
+            alert('Desteklenmeyen format!');
+    }
+}
+
+// Export to CSV format
+function exportToCSV(orders, startDate, endDate) {
+    let csvContent = "Tarih,Masa,Ürün,Miktar,Birim Fiyat,Toplam,Müşteri\n";
+    
+    orders.forEach(order => {
+        const orderDate = new Date(order.completedAt).toLocaleDateString('tr-TR');
+        const tableNum = order.tableNumber || 'Bilinmeyen';
+        const customer = order.customerName || 'Bilinmeyen';
+        
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                const total = (item.price || 0) * (item.quantity || 0);
+                csvContent += `${orderDate},${tableNum},"${item.name}",${item.quantity},${item.price},${total.toFixed(2)},"${customer}"\n`;
+            });
+        }
+    });
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `satış_raporu_${startDate}_${endDate}.csv`;
+    link.click();
+    
+    showAlert('📊 CSV raporu indirildi!', 'success');
+}
+
+// Export to PDF (simplified text format)
+function exportToPDF(orders, startDate, endDate) {
+    // Create a summary report
+    let reportContent = `
+SATIŞ RAPORU
+Tarih Aralığı: ${new Date(startDate).toLocaleDateString('tr-TR')} - ${new Date(endDate).toLocaleDateString('tr-TR')}
+Oluşturulma: ${new Date().toLocaleString('tr-TR')}
+
+=====================================
+
+`;
+    
+    let totalRevenue = 0;
+    const productStats = {};
+    
+    orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(item => {
+                totalRevenue += (item.price || 0) * (item.quantity || 0);
+                const productName = item.name || 'Bilinmeyen';
+                if (!productStats[productName]) {
+                    productStats[productName] = { quantity: 0, revenue: 0 };
+                }
+                productStats[productName].quantity += item.quantity || 0;
+                productStats[productName].revenue += (item.price || 0) * (item.quantity || 0);
+            });
+        }
+    });
+    
+    reportContent += `ÖZET İSTATİSTİKLER:
+- Toplam Satış: ${totalRevenue.toFixed(2)} ₺
+- Toplam Sipariş: ${orders.length}
+- Ortalama Sipariş: ${orders.length > 0 ? (totalRevenue / orders.length).toFixed(2) : 0} ₺
+
+EN ÇOK SATAN ÜRÜNLER:
+`;
+    
+    const topProducts = Object.entries(productStats)
+        .sort(([,a], [,b]) => b.revenue - a.revenue)
+        .slice(0, 10);
+    
+    topProducts.forEach(([product, stats], index) => {
+        reportContent += `${index + 1}. ${product}: ${stats.quantity} adet - ${stats.revenue.toFixed(2)} ₺\n`;
+    });
+    
+    // Download as text file (PDF generation would require additional library)
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `satış_raporu_${startDate}_${endDate}.txt`;
+    link.click();
+    
+    showAlert('📄 Rapor metin dosyası olarak indirildi!', 'success');
+}
+
+// Global function to access statistics
+window.generateStatistics = generateStatistics;
+window.applyQuickFilter = applyQuickFilter;
+window.exportStatistics = exportStatistics;
