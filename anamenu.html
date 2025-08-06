@@ -2504,6 +2504,41 @@
                 notifications.push(newNotification);
                 localStorage.setItem('adminNotifications', JSON.stringify(notifications));
                 
+                // OTOMATIK İSTATİSTİK KAYDI - Sipariş verildiğinde hemen kaydet
+                try {
+                    Object.keys(adminOrders).forEach(personId => {
+                        const person = adminOrders[personId];
+                        if (person && person.items && person.items.length > 0) {
+                            // Sipariş istatistiklere kaydedilsin
+                            const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                            
+                            const orderRecord = {
+                                id: `${tableNumber}_${person.name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                                tableNumber: tableNumber,
+                                customerName: person.name,
+                                items: JSON.parse(JSON.stringify(person.items)), // Deep copy
+                                totalAmount: person.total,
+                                paymentMethod: 'pending', // Henüz ödenmedi
+                                completedAt: new Date().toISOString(),
+                                paidAt: null, // Henüz ödenmedi
+                                source: 'customer_order', // Müşteri siparişi
+                                timestamp: Date.now(),
+                                isAdditionalOrder: isAdditionalOrder,
+                                orderRound: tableData.orderRound || 1
+                            };
+                            
+                            completedOrders.push(orderRecord);
+                            localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+                            
+                            console.log('📊 Müşteri Siparişi Otomatik İstatistik Kaydı:', orderRecord.id);
+                        }
+                    });
+                    
+                    console.log('✅ Müşteri siparişi otomatik olarak istatistiklere kaydedildi');
+                } catch (error) {
+                    console.error('❌ Otomatik istatistik kayıt hatası:', error);
+                }
+                
                 console.log('✅ Müşteri: Sipariş başarıyla admin paneline gönderildi');
                 console.log('📊 Masa verisi:', tableSettings.tables[tableNumber]);
                 console.log('🔔 Bildirim oluşturuldu:', newNotification);

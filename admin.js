@@ -2750,7 +2750,20 @@ function cleanupTables3And4() {
 
 // Initialize table system when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(initializeTableSystem, 500);
+    setTimeout(() => {
+        initializeTableSystem();
+        
+        // Otomatik sipariş izleme sistemini başlat
+        console.log('🚀 Otomatik sipariş izleme sistemi başlatılıyor...');
+        
+        // Mevcut siparişleri senkronize et
+        syncExistingOrders();
+        
+        // Otomatik izlemeyi başlat
+        monitorTableChanges();
+        
+        console.log('✅ Otomatik sipariş sistemi aktif');
+    }, 500);
 });
 
 // Close table modal when clicking outside
@@ -3575,6 +3588,157 @@ function showMessage(message, type = 'info') {
     setTimeout(() => messageDiv.remove(), 3000);
 }
 
+// ==================== AUTOMATIC ORDER TRACKING SYSTEM ====================
+
+// Otomatik sipariş izleme - Müşteri sipariş verdiğinde çalışır
+function autoTrackNewOrder(tableNumber, customerName, orderItems) {
+    console.log('🔄 OTOMATİK SİPARİŞ KAYDI:', {
+        tableNumber,
+        customerName,
+        itemCount: orderItems.length
+    });
+    
+    if (!orderItems || orderItems.length === 0) {
+        console.log('❌ Boş sipariş, kayıt atlandı');
+        return;
+    }
+    
+    // Siparişi hemen istatistiklere kaydet
+    const savedOrder = saveOrderToStatistics(
+        tableNumber,
+        customerName,
+        orderItems,
+        'customer_order',
+        'pending' // Henüz ödenmeyen sipariş
+    );
+    
+    if (savedOrder) {
+        console.log('✅ Otomatik sipariş kaydı tamamlandı:', savedOrder.id);
+    }
+    
+    return savedOrder;
+}
+
+// Masa güncelleme izleyicisi - masa verileri değiştiğinde çalışır
+function monitorTableChanges() {
+    console.log('👀 Masa değişiklik izleyicisi başlatılıyor...');
+    
+    // localStorage değişikliklerini izle
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'tableSettings') {
+            console.log('📊 TableSettings değişikliği algılandı');
+            detectNewOrders();
+        }
+    });
+    
+    // Periyodik kontrol (her 5 saniyede bir)
+    setInterval(() => {
+        detectNewOrders();
+    }, 5000);
+    
+    console.log('✅ Masa izleyicisi aktif');
+}
+
+// Yeni siparişleri tespit et ve kaydet
+function detectNewOrders() {
+    const currentTables = JSON.parse(localStorage.getItem('tableSettings') || '{}');
+    const lastChecked = localStorage.getItem('lastOrderCheck') || '0';
+    const currentTime = Date.now();
+    
+    if (!currentTables.tables) return;
+    
+    let newOrdersFound = 0;
+    
+    Object.keys(currentTables.tables).forEach(tableNum => {
+        const table = currentTables.tables[tableNum];
+        
+        if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
+            Object.keys(table.orders).forEach(personId => {
+                const person = table.orders[personId];
+                
+                if (person && person.items && person.items.length > 0) {
+                    // Son güncelleme zamanını kontrol et
+                    const lastUpdate = new Date(table.lastUpdate || 0).getTime();
+                    
+                    if (lastUpdate > parseInt(lastChecked)) {
+                        // Bu kişinin siparişi daha önce kaydedilmiş mi kontrol et
+                        const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                        const alreadyTracked = existingOrders.some(order => 
+                            order.tableNumber == tableNum && 
+                            order.customerName === person.name &&
+                            order.source === 'auto_track'
+                        );
+                        
+                        if (!alreadyTracked) {
+                            console.log(`🆕 Yeni sipariş tespit edildi: Masa ${tableNum} - ${person.name}`);
+                            
+                            // Otomatik kaydet
+                            autoTrackNewOrder(tableNum, person.name, person.items);
+                            newOrdersFound++;
+                        }
+                    }
+                }
+            });
+        }
+    });
+    
+    // Son kontrol zamanını güncelle
+    localStorage.setItem('lastOrderCheck', currentTime.toString());
+    
+    if (newOrdersFound > 0) {
+        console.log(`✅ ${newOrdersFound} yeni sipariş otomatik olarak kaydedildi`);
+    }
+}
+
+// Sistem başlatıldığında mevcut siparişleri kaydet
+function syncExistingOrders() {
+    console.log('🔄 Mevcut siparişler senkronize ediliyor...');
+    
+    const currentTables = JSON.parse(localStorage.getItem('tableSettings') || '{}');
+    const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    
+    if (!currentTables.tables) {
+        console.log('❌ Masa verisi bulunamadı');
+        return 0;
+    }
+    
+    let syncedCount = 0;
+    
+    Object.keys(currentTables.tables).forEach(tableNum => {
+        const table = currentTables.tables[tableNum];
+        
+        if (!table.isEmpty && table.orders && Object.keys(table.orders).length > 0) {
+            Object.keys(table.orders).forEach(personId => {
+                const person = table.orders[personId];
+                
+                if (person && person.items && person.items.length > 0) {
+                    // Bu sipariş daha önce kaydedilmiş mi?
+                    const alreadyExists = existingOrders.some(order => 
+                        order.tableNumber == tableNum && 
+                        order.customerName === person.name
+                    );
+                    
+                    if (!alreadyExists) {
+                        console.log(`📝 Mevcut sipariş kaydediliyor: Masa ${tableNum} - ${person.name}`);
+                        
+                        saveOrderToStatistics(
+                            tableNum,
+                            person.name,
+                            person.items,
+                            'sync_existing',
+                            'pending'
+                        );
+                        syncedCount++;
+                    }
+                }
+            });
+        }
+    });
+    
+    console.log(`✅ ${syncedCount} mevcut sipariş senkronize edildi`);
+    return syncedCount;
+}
+
 // ==================== CENTRALIZED ORDER STATISTICS SYSTEM ====================
 
 // Merkezi sipariş kaydetme fonksiyonu - Tüm siparişleri istatistikler için kaydet
@@ -3592,6 +3756,22 @@ function saveOrderToStatistics(tableNumber, customerName, items, source = 'manua
         return null;
     }
     
+    // Mevcut siparişleri kontrol et - duplikasyon önle
+    const existingOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    
+    // Aynı masa ve müşteri için benzeri sipariş var mı kontrol et
+    const similarOrder = existingOrders.find(order => 
+        order.tableNumber == tableNumber && 
+        order.customerName === customerName &&
+        order.source === source &&
+        Math.abs(Date.now() - new Date(order.completedAt).getTime()) < 60000 // Son 1 dakika içinde
+    );
+    
+    if (similarOrder && source !== 'manual') {
+        console.log('⚠️ Benzer sipariş zaten mevcut, duplikasyon önlendi:', similarOrder.id);
+        return similarOrder;
+    }
+    
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     const completedOrder = {
@@ -3602,7 +3782,7 @@ function saveOrderToStatistics(tableNumber, customerName, items, source = 'manua
         totalAmount: totalAmount,
         paymentMethod: paymentMethod,
         completedAt: new Date().toISOString(),
-        paidAt: new Date().toISOString(),
+        paidAt: paymentMethod === 'pending' ? null : new Date().toISOString(),
         source: source,
         timestamp: Date.now()
     };
@@ -4465,6 +4645,9 @@ window.exportStatistics = exportStatistics;
 window.showOrdersDebugInfo = showOrdersDebugInfo;
 window.backupAllActiveOrdersToStatistics = backupAllActiveOrdersToStatistics;
 window.saveOrderToStatistics = saveOrderToStatistics;
+window.syncExistingOrders = syncExistingOrders;
+window.detectNewOrders = detectNewOrders;
+window.autoTrackNewOrder = autoTrackNewOrder;
 
 // ==================== DUPLICATE PREVENTION SYSTEM ====================
 
