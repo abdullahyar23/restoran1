@@ -1,0 +1,11 @@
+{
+  "primaryColor": "#e74c3c",
+  "secondaryColor": "#2c3e50",
+  "accentColor": "#f39c12",
+  "backgroundColor": "#f8f8f8",
+  "fontFamily": "'Arial', sans-serif",
+  "borderRadius": "15px",
+  "showPrices": true,
+  "showDescriptions": true,
+  "logo": null
+}
