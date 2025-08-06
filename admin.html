@@ -1203,8 +1203,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <button type="button" class="btn btn-primary" onclick="generateStatistics()">
-                                    📊 İstatistikleri Güncelle
+                                <button type="button" class="btn btn-primary" onclick="generateStatisticsWithCleanup()">
+                                    📊 İstatistikleri Güncelle & Temizle
                                 </button>
                             </div>
                         </div>
@@ -1306,8 +1306,11 @@
 
                         <!-- Export Options -->
                         <div class="stats-export">
-                            <h3>📁 Rapor Dışa Aktarma</h3>
+                            <h3>📁 Rapor Dışa Aktarma & Temizleme</h3>
                             <div class="export-buttons">
+                                <button class="btn btn-danger" onclick="cleanDuplicateCompletedOrders(); generateStatistics();" style="margin-bottom: 10px;">
+                                    🧹 Duplike Kayıtları Temizle
+                                </button>
                                 <button class="btn btn-success" onclick="exportStatistics('excel')">
                                     📊 Excel Raporu İndir
                                 </button>

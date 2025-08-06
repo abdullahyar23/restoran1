@@ -2469,31 +2469,41 @@ function markTableCompleted() {
     }
     
     if (confirm(`Masa ${currentTableModal} siparişi tamamlandı olarak işaretlensin mi?\n\n✅ Sipariş tamamlanacak\n🧹 Masa temizlenecek\n📋 Yeni müşteri için hazır hale gelecek`)) {
-        // Her kişi için ayrı ayrı tamamlanan sipariş kaydet (istatistikler için)
+        // Her kişi için ayrı ayrı tamamlanan sipariş kaydet (sadece henüz işlenmemişler için)
         if (table.orders && Object.keys(table.orders).length > 0) {
             Object.keys(table.orders).forEach(personId => {
                 const person = table.orders[personId];
                 if (person && person.items && person.items.length > 0) {
                     const personTotal = person.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                     
-                    const completedOrder = {
-                        id: `${currentTableModal}_${person.name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                        tableNumber: currentTableModal,
-                        customerName: person.name,
-                        items: person.items,
-                        totalAmount: personTotal,
-                        paymentMethod: 'cash', // Default olarak nakit
-                        completedAt: new Date().toISOString(),
-                        paidAt: new Date().toISOString(),
-                        completedBy: 'admin'
-                    };
+                    // Kişinin ödeme durumunu ve istatistik durumunu kontrol et
+                    const personInPersonsStructure = table.persons && table.persons[person.name];
+                    const alreadyProcessed = personInPersonsStructure && personInPersonsStructure.statisticsProcessed;
                     
-                    // CompletedOrders listesine ekle
-                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-                    completedOrders.push(completedOrder);
-                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-                    
-                    console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+                    // Sadece henüz istatistiklere işlenmemiş kişileri ekle
+                    if (!alreadyProcessed) {
+                        const completedOrder = {
+                            id: `${currentTableModal}_${person.name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                            tableNumber: currentTableModal,
+                            customerName: person.name,
+                            items: person.items,
+                            totalAmount: personTotal,
+                            paymentMethod: 'cash', // Default olarak nakit
+                            completedAt: new Date().toISOString(),
+                            paidAt: new Date().toISOString(),
+                            completedBy: 'admin',
+                            source: 'table_completion' // İstatistik kaynağını belirt
+                        };
+                        
+                        // CompletedOrders listesine ekle
+                        const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                        completedOrders.push(completedOrder);
+                        localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+                        
+                        console.log('📊 Masa tamamlama - İstatistikler için sipariş kaydedildi:', completedOrder);
+                    } else {
+                        console.log('📊 Masa tamamlama - Kişi zaten işlenmiş, atlanıyor:', person.name);
+                    }
                 }
             });
         }
@@ -3251,6 +3261,7 @@ function processAllPayments() {
                     person.paymentStatus = 'paid';
                     person.paidAt = new Date().toISOString();
                     person.paidAmount = personTotal;
+                    person.statisticsProcessed = true; // Duplikasyon önleyici
                     
                     // Tamamlanan siparişi istatistikler için kaydet
                     const completedOrder = {
@@ -3261,7 +3272,8 @@ function processAllPayments() {
                         totalAmount: personTotal,
                         paymentMethod: 'cash', // Default olarak nakit
                         completedAt: new Date().toISOString(),
-                        paidAt: new Date().toISOString()
+                        paidAt: new Date().toISOString(),
+                        source: 'bulk_payment' // İstatistik kaynağını belirt
                     };
                     
                     // CompletedOrders listesine ekle
@@ -3269,7 +3281,7 @@ function processAllPayments() {
                     completedOrders.push(completedOrder);
                     localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
                     
-                    console.log('📊 İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
+                    console.log('📊 Toplu ödeme - İstatistikler için tamamlanan sipariş kaydedildi:', completedOrder);
                 }
             }
         });
@@ -3527,6 +3539,7 @@ function processPersonPayment(personName) {
         tableData.persons[personName].paymentStatus = 'paid';
         tableData.persons[personName].paidAt = new Date().toISOString();
         tableData.persons[personName].paidAmount = personTotal;
+        tableData.persons[personName].statisticsProcessed = true; // Duplikasyon önleyici
         
         console.log('✅ Ödeme kaydedildi:', tableData.persons[personName]);
         
@@ -3539,7 +3552,8 @@ function processPersonPayment(personName) {
             totalAmount: personTotal,
             paymentMethod: 'cash', // Default olarak nakit, gerekirse güncellenebilir
             completedAt: new Date().toISOString(),
-            paidAt: new Date().toISOString()
+            paidAt: new Date().toISOString(),
+            source: 'individual_payment' // İstatistik kaynağını belirt
         };
         
         // CompletedOrders listesine ekle
@@ -4209,3 +4223,123 @@ EN ÇOK SATAN ÜRÜNLER:
 window.generateStatistics = generateStatistics;
 window.applyQuickFilter = applyQuickFilter;
 window.exportStatistics = exportStatistics;
+
+// ==================== DUPLICATE PREVENTION SYSTEM ====================
+
+// Clean duplicate completed orders (same customer, same table, close timestamps)
+function cleanDuplicateCompletedOrders() {
+    console.log('🧹 Duplike tamamlanan siparişler temizleniyor...');
+    
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    console.log('📦 Toplam kayıt sayısı:', completedOrders.length);
+    
+    if (completedOrders.length === 0) {
+        console.log('✅ Temizlenecek kayıt bulunamadı');
+        return 0;
+    }
+    
+    // Group orders by customer and table
+    const groupedOrders = {};
+    
+    completedOrders.forEach((order, index) => {
+        const key = `${order.tableNumber}_${order.customerName}`;
+        if (!groupedOrders[key]) {
+            groupedOrders[key] = [];
+        }
+        groupedOrders[key].push({ ...order, originalIndex: index });
+    });
+    
+    let duplicatesRemoved = 0;
+    const finalOrders = [];
+    
+    // Process each group
+    Object.keys(groupedOrders).forEach(key => {
+        const orders = groupedOrders[key];
+        
+        if (orders.length === 1) {
+            // Single order, keep it
+            finalOrders.push(orders[0]);
+        } else {
+            // Multiple orders for same customer and table
+            console.log(`🔍 ${key} için ${orders.length} kayıt bulundu`);
+            
+            // Sort by completion time
+            orders.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
+            
+            // Group by close timestamps (within 5 minutes)
+            const timeGroups = [];
+            
+            orders.forEach(order => {
+                const orderTime = new Date(order.completedAt);
+                let addedToGroup = false;
+                
+                for (let group of timeGroups) {
+                    const groupTime = new Date(group[0].completedAt);
+                    const timeDiff = Math.abs(orderTime - groupTime) / (1000 * 60); // minutes
+                    
+                    if (timeDiff <= 5) {
+                        group.push(order);
+                        addedToGroup = true;
+                        break;
+                    }
+                }
+                
+                if (!addedToGroup) {
+                    timeGroups.push([order]);
+                }
+            });
+            
+            // Keep only one order from each time group (the first one)
+            timeGroups.forEach(group => {
+                if (group.length > 1) {
+                    console.log(`🧹 ${key} - ${group.length} duplike kayıt, sadece 1'i korunuyor`);
+                    duplicatesRemoved += group.length - 1;
+                    
+                    // Keep the order with most complete data
+                    const bestOrder = group.reduce((best, current) => {
+                        const bestScore = (best.items?.length || 0) + (best.source ? 1 : 0);
+                        const currentScore = (current.items?.length || 0) + (current.source ? 1 : 0);
+                        return currentScore > bestScore ? current : best;
+                    });
+                    
+                    finalOrders.push(bestOrder);
+                } else {
+                    finalOrders.push(group[0]);
+                }
+            });
+        }
+    });
+    
+    // Remove originalIndex property
+    const cleanedOrders = finalOrders.map(order => {
+        const { originalIndex, ...cleanOrder } = order;
+        return cleanOrder;
+    });
+    
+    // Save cleaned orders
+    localStorage.setItem('completedOrders', JSON.stringify(cleanedOrders));
+    
+    console.log(`✅ Duplike temizleme tamamlandı:`);
+    console.log(`📦 Önceki kayıt sayısı: ${completedOrders.length}`);
+    console.log(`📦 Yeni kayıt sayısı: ${cleanedOrders.length}`);
+    console.log(`🧹 Temizlenen duplike: ${duplicatesRemoved}`);
+    
+    return duplicatesRemoved;
+}
+
+// Auto-clean duplicates when statistics are generated
+function generateStatisticsWithCleanup() {
+    // First clean duplicates
+    const duplicatesRemoved = cleanDuplicateCompletedOrders();
+    
+    if (duplicatesRemoved > 0) {
+        console.log(`🧹 ${duplicatesRemoved} duplike kayıt temizlendi, istatistikler yeniden oluşturuluyor...`);
+    }
+    
+    // Then generate statistics
+    generateStatistics();
+}
+
+// Global functions
+window.cleanDuplicateCompletedOrders = cleanDuplicateCompletedOrders;
+window.generateStatisticsWithCleanup = generateStatisticsWithCleanup;
